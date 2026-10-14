@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { generateNotes, type HermesRun } from "./generate.ts";
 
 const fixture = join(import.meta.dir, "../../test/fixtures/sample.transcript.md");
-const meta = (dir: string) => ({ file: join(dir, "rec.mp4"), startedAt: "2026-10-14T22:05:29.000Z", durationMs: 135_000 });
+const meta = (dir: string) => ({ file: join(dir, "rec.mp4"), startedAt: "2026-10-14T22:05:29.000Z", durationMs: 135_000, timeZone: "UTC" });
 const reply = "## Summary\nA sync.\n## Key points\n- x\n## Decisions\n- y\n## Action items\n- [ ] z\n## Suggestions\n- w";
 const ok = (stdout = reply): HermesRun => async () => ({ exitCode: 0, stdout, stderr: "", timedOut: false });
 
@@ -24,7 +24,7 @@ describe("generateNotes", () => {
     withTranscript();
     const result = await generateNotes(base, meta(dir), ok());
     expect(result).toEqual({ written: true, message: `notes: wrote ${base}.notes.md` });
-    expect(readFileSync(`${base}.notes.md`, "utf8")).toBe(`# Notes: rec.mp4\n\n- Date: 2026-10-14\n- Duration: 2m15s\n\n${reply}\n`);
+    expect(readFileSync(`${base}.notes.md`, "utf8")).toBe(`# Notes: rec.mp4\n\n- Started: 2026-10-14 22:05\n- Duration: 2m15s\n\n${reply}\n`);
   });
 
   test("passes the fixture transcript to hermes inside a delimited block, with safety flags and a fresh cwd", async () => {
@@ -97,6 +97,24 @@ describe("generateNotes", () => {
     const result = await generateNotes(base, meta(dir), run);
     expect(result).toEqual({ written: false, message: "notes: kaboom" });
     expect(existsSync(cwd)).toBe(false);
+  });
+
+  test("asks hermes to stamp bullets and drops stamps past the recording duration", async () => {
+    withTranscript();
+    let prompt = "";
+    const stamped = "## Key points\n- [00:30] real\n- [09:00] invented\n## Action items\n- [ ] [01:00] send";
+    await generateNotes(base, meta(dir), async (args) => {
+      prompt = args.at(-1)!;
+      return { exitCode: 0, stdout: stamped, stderr: "", timedOut: false };
+    });
+    expect(prompt).toContain("[mm:ss]");
+    expect(readFileSync(`${base}.notes.md`, "utf8")).toEndWith("## Key points\n- [00:30] real\n- invented\n## Action items\n- [ ] [01:00] send\n");
+  });
+
+  test("without a known duration, stamps are checked against the last transcript time", async () => {
+    writeFileSync(`${base}.live.txt`, "[00:01] me: hi\n[00:40] them: bye\n");
+    await generateNotes(base, { file: join(dir, "rec.mp4"), startedAt: "2026-10-14T22:05:29.000Z" }, ok("- [00:40] ok\n- [00:41] too late"));
+    expect(readFileSync(`${base}.notes.md`, "utf8")).toEndWith("- [00:40] ok\n- too late\n");
   });
 
   test("missing transcript says to run with --transcribe first and never calls hermes", async () => {

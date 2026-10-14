@@ -59,8 +59,9 @@ export function createLiveSession(deps: LiveSessionDeps) {
     }
     cadence.succeeded();
     state.status = "";
-    show(outcome.suggestions);
-    deps.appendSuggestions(`## [${formatTimestamp(elapsedMs())}]\n${outcome.suggestions.map((s) => `- ${s}`).join("\n")}\n\n`);
+    const stamp = formatTimestamp(elapsedMs());
+    show(outcome.suggestions.map((line) => `[${stamp}] ${line}`));
+    deps.appendSuggestions(`## [${stamp}]\n${outcome.suggestions.map((s) => `- ${s}`).join("\n")}\n\n`);
   }
 
   async function answer(question: string) {
@@ -72,8 +73,9 @@ export function createLiveSession(deps: LiveSessionDeps) {
     }
     state.status = "";
     const [first = "", ...rest] = outcome.suggestions;
-    show([`Q: ${question}`, `A: ${first}`, ...rest.map((line) => `   ${line}`)]);
-    deps.appendSuggestions(`## [${formatTimestamp(elapsedMs())}] Q: ${question}\n${outcome.suggestions.join("\n")}\n\n`);
+    const stamp = formatTimestamp(elapsedMs());
+    show([`[${stamp}] Q: ${question}`, `A: ${first}`, ...rest.map((line) => `   ${line}`)]);
+    deps.appendSuggestions(`## [${stamp}] Q: ${question}\n${outcome.suggestions.join("\n")}\n\n`);
   }
 
   const failure = (prefix: string) => (error: unknown) => {

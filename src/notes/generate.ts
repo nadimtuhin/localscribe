@@ -1,6 +1,8 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
+import { lastClockMs } from "../live/prompt.ts";
+import { keepValidStamps } from "./stamps.ts";
 import { buildHermesArgs, buildNotesPrompt, formatNotesFile, type NotesMeta } from "./prompt.ts";
 
 export const HERMES_TIMEOUT_MS = 120_000;
@@ -45,7 +47,8 @@ export async function generateNotes(base: string, meta: NotesMeta, run: HermesRu
     if (result.timedOut) return skipped(`notes: hermes timed out after ${HERMES_TIMEOUT_MS / 1000}s`);
     if (result.exitCode !== 0) return skipped(`notes: hermes failed (exit ${result.exitCode}): ${result.stderr.trim().split("\n")[0] ?? ""}`);
     if (!result.stdout.trim()) return skipped("notes: hermes returned nothing");
-    writeFileSync(notesPath, formatNotesFile(meta, result.stdout), { flag: "wx" });
+    const limitMs = meta.durationMs ?? lastClockMs(transcript);
+    writeFileSync(notesPath, formatNotesFile(meta, keepValidStamps(result.stdout, limitMs)), { flag: "wx" });
     return { written: true, message: `notes: wrote ${notesPath}` };
   } catch (error) {
     return skipped(`notes: ${error instanceof Error ? error.message : String(error)}`);

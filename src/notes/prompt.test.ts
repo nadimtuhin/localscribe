@@ -72,14 +72,27 @@ describe("truncateTranscript", () => {
 });
 
 describe("formatNotesFile", () => {
-  test("writes a header with file, date and duration, then the reply verbatim", () => {
-    const out = formatNotesFile(meta, "## Summary\nDone.\n");
-    expect(out).toBe("# Notes: 2026-10-14_22-05-29.mp4\n\n- Date: 2026-10-14\n- Duration: 2m15s\n\n## Summary\nDone.\n");
+  test("writes a header with file, local start time and duration, then the reply verbatim", () => {
+    const out = formatNotesFile({ ...meta, timeZone: "UTC" }, "## Summary\nDone.\n");
+    expect(out).toBe("# Notes: 2026-10-14_22-05-29.mp4\n\n- Started: 2026-10-14 22:05\n- Duration: 2m15s\n\n## Summary\nDone.\n");
   });
 
   test("omits duration when unknown", () => {
-    const out = formatNotesFile({ file: "/r/a.mp4", startedAt: "2026-01-02T03:04:05.000Z" }, "body");
-    expect(out).toBe("# Notes: a.mp4\n\n- Date: 2026-01-02\n\nbody\n");
+    const out = formatNotesFile({ file: "/r/a.mp4", startedAt: "2026-01-02T03:04:05.000Z", timeZone: "UTC" }, "body");
+    expect(out).toBe("# Notes: a.mp4\n\n- Started: 2026-01-02 03:04\n\nbody\n");
+  });
+
+  test("a start just before midnight UTC shows the local date and time, not the UTC date", () => {
+    const out = formatNotesFile({ file: "/r/a.mp4", startedAt: "2026-10-14T18:36:57.000Z", timeZone: "Asia/Dhaka" }, "body");
+    expect(out).toBe("# Notes: a.mp4\n\n- Started: 2026-10-15 00:36\n\nbody\n");
+  });
+
+  test("defaults to the machine's time zone", () => {
+    const startedAt = "2026-10-14T18:36:57.000Z";
+    const local = new Date(startedAt);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const expected = `${local.getFullYear()}-${pad(local.getMonth() + 1)}-${pad(local.getDate())} ${pad(local.getHours())}:${pad(local.getMinutes())}`;
+    expect(formatNotesFile({ file: "/r/a.mp4", startedAt }, "body")).toContain(`- Started: ${expected}\n`);
   });
 });
 

@@ -12,6 +12,7 @@ export interface NotesMeta {
   durationMs?: number;
   role?: Role; // from --role; added to the prompt
   lang?: string; // from --lang; the prompt asks for notes in it
+  timeZone?: string; // IANA name; the machine's zone when unset
 }
 
 export function truncateTranscript(transcript: string): string {
@@ -30,6 +31,8 @@ Reply in Markdown with exactly these sections:
 ## Action items (use "- [ ]" checkboxes)
 ## Suggestions (what to do next or improve)`;
 
+const STAMP_INSTRUCTION = `\nIn Key points, Decisions, Action items and Suggestions, start every bullet with the [mm:ss] of the transcript line it comes from, copied from that line, e.g. "- [12:03] text" or "- [ ] [12:03] text".`;
+
 // Manual notes come before the transcript so the transcript block stays last, as INSTRUCTIONS says.
 export function buildNotesPrompt(transcript: string, manualNotes = "", role?: Role, lang?: string): string {
   const manual = manualNotes.trim()
@@ -37,11 +40,21 @@ export function buildNotesPrompt(transcript: string, manualNotes = "", role?: Ro
     : "";
   const roleLine = role ? `\nThe user's role in this conversation: ${role}. Weigh the notes from that side.` : "";
   const langLine = lang ? `\n${languageInstruction(lang)}` : "";
-  return `${INSTRUCTIONS}${roleLine}${langLine}${manual}\n\n${untrustedBlock("transcript", truncateTranscript(transcript))}`;
+  return `${INSTRUCTIONS}${STAMP_INSTRUCTION}${roleLine}${langLine}${manual}\n\n${untrustedBlock("transcript", truncateTranscript(transcript))}`;
+}
+
+// "YYYY-MM-DD HH:MM" in the machine's zone (or `timeZone`), never the UTC date the ISO string carries.
+function localDateTime(iso: string, timeZone?: string): string {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", { timeZone, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+      .formatToParts(new Date(iso))
+      .map(({ type, value }) => [type, value]),
+  );
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
 }
 
 export function formatNotesFile(meta: NotesMeta, reply: string): string {
-  const lines = [`# Notes: ${basename(meta.file)}`, "", `- Date: ${meta.startedAt.slice(0, 10)}`];
+  const lines = [`# Notes: ${basename(meta.file)}`, "", `- Started: ${localDateTime(meta.startedAt, meta.timeZone)}`];
   if (meta.durationMs !== undefined) lines.push(`- Duration: ${formatDuration(meta.durationMs)}`);
   return `${lines.join("\n")}\n\n${reply.trimEnd()}\n`;
 }

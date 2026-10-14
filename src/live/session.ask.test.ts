@@ -53,7 +53,7 @@ describe("inline ask", () => {
     expect(prompts[0]).toContain("pricing");
     expect(prompts[0]).toContain("Acme brief");
     expect(files.manual).toBe("[01:10] note: pricing\n");
-    expect(session.state.suggestions).toEqual(["Q: what did they say about budget", "A: Budget was flat.", "   No growth planned."]);
+    expect(session.state.suggestions).toEqual(["[01:23] Q: what did they say about budget", "A: Budget was flat.", "   No growth planned."]);
     expect(files.suggestions).toBe("## [01:23] Q: what did they say about budget\nBudget was flat.\nNo growth planned.\n\n");
   });
 

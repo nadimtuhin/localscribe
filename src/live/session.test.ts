@@ -54,7 +54,7 @@ describe("live session", () => {
     expect(prompts).toHaveLength(1);
     expect(prompts[0]).toContain("we shipped last quarter");
     expect(prompts[0]).toContain("budget?");
-    expect(session.state.suggestions).toEqual(["Ask about budget", "Probe the timeline"]);
+    expect(session.state.suggestions).toEqual(["[01:10] Ask about budget", "[01:10] Probe the timeline"]);
     expect(files.suggestions).toBe("## [01:10]\n- Ask about budget\n- Probe the timeline\n\n");
     await session.tick();
     await session.pending;
@@ -73,7 +73,7 @@ describe("live session", () => {
     expect(prompts).toHaveLength(1);
     release({ exitCode: 0, stdout: "- done", stderr: "", timedOut: false });
     await session.pending;
-    expect(session.state.suggestions).toEqual(["done"]);
+    expect(session.state.suggestions).toEqual([expect.stringMatching(/^\[\d\d:\d\d\] done$/)]);
   });
 
   test("a failing hermes shows a dim status and the session keeps ticking", async () => {
