@@ -7,7 +7,8 @@
     "start": "bun src/cli.ts start",
     "stop": "bun src/cli.ts stop",
     "test": "bun test",
-    "coverage": "bun test --coverage"
+    "coverage": "bun test --coverage",
+    "e2e": "E2E=1 bun test ./e2e/localscribe.e2e.ts --timeout 180000"
   },
   "devDependencies": { "@types/bun": "latest" }
 }
