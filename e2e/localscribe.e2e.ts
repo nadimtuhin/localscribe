@@ -169,12 +169,11 @@ describe.skipIf(!E2E_ENABLED)("localscribe e2e", () => {
     expect(leftoverNames(s)).toEqual([]);
   }, 90_000, noAnnotate);
 
-  // Known bug: `start --help` falls through to startCommand and begins recording. Remove .todo once fixed.
-  test.todo("7. start --help does not start a recording", async () => {
+  t("7. start --help does not start a recording", async () => {
     const s = fresh();
     const out = s.out("help");
     const result = await s.run(["start", "--help", "--out", out], 20_000);
     const recording = s.read(`${s.home}/.localscribe/state.json`) !== "";
     expect({ code: result.code, recording, leftovers: leftoverNames(s) }).toEqual({ code: 0, recording: false, leftovers: [] });
-  });
+  }, 30_000);
 });

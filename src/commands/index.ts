@@ -25,7 +25,7 @@ const commands: Record<string, Command> = {
 export async function runCli(argv: string[]): Promise<number> {
   const { positionals, values } = parseArgs({ args: argv, allowPositionals: true, options: cliOptions });
   const command = commands[positionals[0] ?? ""];
-  if (!command) {
+  if (!command || values.help) {
     console.log(HELP);
     return values.help ? 0 : 1;
   }

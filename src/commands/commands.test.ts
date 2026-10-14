@@ -24,6 +24,12 @@ describe("runCli", () => {
     expect(out.join("\n")).toContain("localscribe start");
   });
 
+  test("--help after a command prints help instead of running it", async () => {
+    expect(await runCli(["stop", "--help"])).toBe(0);
+    expect(out.join("\n")).toContain("localscribe start");
+    expect(err.join("\n")).not.toContain("not recording");
+  });
+
   test("help documents the live command", async () => {
     await runCli(["--help"]);
     expect(out.join("\n")).toContain("localscribe live");
