@@ -36,7 +36,7 @@ describe("notes plugin", () => {
   test("stop writes notes with date and duration from the recording", async () => {
     const lines: string[] = [];
     await runStopHooks([createNotesPlugin(ok)], stopContext(lines));
-    expect(readFileSync(`${base}.notes.md`, "utf8")).toBe(`# Notes: rec.mp4\n\n- Date: 2026-10-14\n- Duration: 2m15s\n\n${reply}\n`);
+    expect(readFileSync(`${base}.notes.md`, "utf8")).toBe(`# Notes: rec.mp4\n\n- Started: 2026-10-14 22:05\n- Duration: 2m15s\n\n${reply}\n`);
     expect(lines[0]).toContain("sending the transcript to Hermes");
   });
 

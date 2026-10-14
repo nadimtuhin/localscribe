@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { generateNotes, type HermesRun } from "./generate.ts";
 
 const fixture = join(import.meta.dir, "../../test/fixtures/sample.transcript.md");
-const meta = (dir: string) => ({ file: join(dir, "rec.mp4"), startedAt: "2026-10-14T22:05:29.000Z", durationMs: 135_000 });
+const meta = (dir: string) => ({ file: join(dir, "rec.mp4"), startedAt: "2026-10-14T22:05:29.000Z", durationMs: 135_000, timeZone: "UTC" });
 const reply = "## Summary\nA sync.\n## Key points\n- x\n## Decisions\n- y\n## Action items\n- [ ] z\n## Suggestions\n- w";
 const ok = (stdout = reply): HermesRun => async () => ({ exitCode: 0, stdout, stderr: "", timedOut: false });
 
@@ -24,7 +24,7 @@ describe("generateNotes", () => {
     withTranscript();
     const result = await generateNotes(base, meta(dir), ok());
     expect(result).toEqual({ written: true, message: `notes: wrote ${base}.notes.md` });
-    expect(readFileSync(`${base}.notes.md`, "utf8")).toBe(`# Notes: rec.mp4\n\n- Date: 2026-10-14\n- Duration: 2m15s\n\n${reply}\n`);
+    expect(readFileSync(`${base}.notes.md`, "utf8")).toBe(`# Notes: rec.mp4\n\n- Started: 2026-10-14 22:05\n- Duration: 2m15s\n\n${reply}\n`);
   });
 
   test("passes the fixture transcript to hermes inside a delimited block, with safety flags and a fresh cwd", async () => {

@@ -10,6 +10,7 @@ export interface NotesMeta {
   startedAt: string; // ISO
   durationMs?: number;
   role?: Role; // from --role; added to the prompt
+  timeZone?: string; // IANA name; the machine's zone when unset
 }
 
 export function truncateTranscript(transcript: string): string {
@@ -37,8 +38,18 @@ export function buildNotesPrompt(transcript: string, manualNotes = "", role?: Ro
   return `${INSTRUCTIONS}${roleLine}${manual}\n\n${untrustedBlock("transcript", truncateTranscript(transcript))}`;
 }
 
+// "YYYY-MM-DD HH:MM" in the machine's zone (or `timeZone`), never the UTC date the ISO string carries.
+function localDateTime(iso: string, timeZone?: string): string {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", { timeZone, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })
+      .formatToParts(new Date(iso))
+      .map(({ type, value }) => [type, value]),
+  );
+  return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
+}
+
 export function formatNotesFile(meta: NotesMeta, reply: string): string {
-  const lines = [`# Notes: ${basename(meta.file)}`, "", `- Date: ${meta.startedAt.slice(0, 10)}`];
+  const lines = [`# Notes: ${basename(meta.file)}`, "", `- Started: ${localDateTime(meta.startedAt, meta.timeZone)}`];
   if (meta.durationMs !== undefined) lines.push(`- Duration: ${formatDuration(meta.durationMs)}`);
   return `${lines.join("\n")}\n\n${reply.trimEnd()}\n`;
 }
