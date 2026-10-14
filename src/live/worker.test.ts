@@ -24,6 +24,7 @@ function harness(opts: { speakers?: ("me" | "them")[]; texts: Record<string, str
     },
     remove: (name) => void removed.push(name),
     append: (text) => void appended.push(text),
+    log: () => {},
     now: () => now,
     recordingActive: () => opts.ticks[Math.min(tick, opts.ticks.length - 1)]!.active,
     sleep: async () => {
@@ -111,5 +112,24 @@ describe("runLiveWorker", () => {
     };
     await runLiveWorker(h.deps);
     expect(h.appended.join("")).toBe("[00:06] me: fine\n");
+  });
+
+  test("a failing tick is logged and the next tick carries on", async () => {
+    const h = harness({
+      speakers: ["me"],
+      texts: { "me_00001.wav": "survived" },
+      ticks: [{ at: 7_000, active: true, add: { "me_00001.wav": 6_000 } }, { at: 8_000, active: false }],
+    });
+    const realList = h.deps.listDir;
+    let listCalls = 0;
+    h.deps.listDir = () => {
+      if (listCalls++ === 0) throw new Error("ENOENT");
+      return realList();
+    };
+    const logged: string[] = [];
+    h.deps.log = (line) => void logged.push(line);
+    await runLiveWorker(h.deps);
+    expect(logged.join("\n")).toContain("ENOENT");
+    expect(h.appended.join("")).toBe("[00:00] me: survived\n");
   });
 });

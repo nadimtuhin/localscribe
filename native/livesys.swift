@@ -1,5 +1,6 @@
 // Captures system audio with ScreenCaptureKit and writes rolling 16 kHz mono WAV segments for live transcription.
-// Usage: livesys <output-dir> [segment-seconds]   Writes <dir>/them_00001.wav, them_00002.wav, ...
+// Usage: livesys <output-dir> [segment-seconds] [--parent-pid N]   Writes <dir>/them_00001.wav, them_00002.wav, ...
+// With --parent-pid it finishes and exits once that process is gone.
 // Each segment appears atomically (.part then rename). Stop with SIGINT/SIGTERM.
 import AVFoundation
 import ScreenCaptureKit
@@ -114,12 +115,21 @@ func finishAndExit(code: Int32) {
 }
 
 var signalSources: [DispatchSourceSignal] = []
+var parentWatchdog: DispatchSourceTimer?
 for sig in [SIGINT, SIGTERM] {
   signal(sig, SIG_IGN)
   let source = DispatchSource.makeSignalSource(signal: sig, queue: .main)
   source.setEventHandler { finishAndExit(code: 0) }
   source.resume()
   signalSources.append(source)
+}
+
+if let flag = CommandLine.arguments.firstIndex(of: "--parent-pid"), flag + 1 < CommandLine.arguments.count, let parent = pid_t(CommandLine.arguments[flag + 1]) {
+  let timer = DispatchSource.makeTimerSource(queue: .main)
+  timer.schedule(deadline: .now() + 2, repeating: 2)
+  timer.setEventHandler { if kill(parent, 0) != 0 && errno == ESRCH { finishAndExit(code: 0) } }
+  timer.resume()
+  parentWatchdog = timer
 }
 
 Task {

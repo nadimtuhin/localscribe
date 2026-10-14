@@ -37,6 +37,7 @@ export const liveWorkerCommand: Command = async ({ positionals }) => {
     },
     remove: (name) => rmSync(join(dir, name), { force: true }),
     append: (text) => appendFileSync(`${base}.live.txt`, text),
+    log: (line) => void console.error(line),
     now: Date.now,
     recordingActive: () => !interrupted && activeRecording() !== null,
     sleep: (ms) => Bun.sleep(ms),

@@ -47,7 +47,7 @@ export function createLivePlugin(deps: LiveDeps = realDeps()): RecorderPlugin {
       if (ctx.options.systemAudio !== false) {
         speakers.push("them");
         const helper = ensureHelper();
-        ctx.addSidecar(runner.spawnDetached([helper, segmentDir, String(SEGMENT_SECONDS)], `${ctx.base}.live.system.log`), "livesys");
+        ctx.addSidecar(runner.spawnDetached([helper, segmentDir, String(SEGMENT_SECONDS), ...(ctx.recorderPid === undefined ? [] : ["--parent-pid", String(ctx.recorderPid)])], `${ctx.base}.live.system.log`), "livesys");
       }
       ctx.addSidecar(runner.spawnDetached(workerCommand(ctx.base, speakers.join(",")), `${ctx.base}.live.worker.log`), "bun", { drain: true });
       ctx.log(`live: transcribing to ${liveFile}; open the assistant with: localscribe live`);

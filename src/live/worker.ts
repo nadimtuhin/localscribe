@@ -10,6 +10,7 @@ export interface WorkerDeps {
   transcribe(name: string): Promise<string>; // raw whisper text for one segment
   remove(name: string): void;
   append(text: string): void;
+  log(line: string): void;
   now(): number;
   recordingActive(): boolean;
   sleep(ms: number): Promise<void>;
@@ -43,11 +44,22 @@ export async function runLiveWorker(deps: WorkerDeps): Promise<void> {
     }
   };
 
+  // A bad tick (vanished dir, full disk) is logged; the next one retries, so one error never ends the live view.
+  const attempt = async (step: () => Promise<void> | void) => {
+    try {
+      await step();
+    } catch (error) {
+      deps.log(`live-worker: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
   for (;;) {
     const active = deps.recordingActive();
-    await drain(!active);
-    if (!active) return emit(merger.flush());
-    emit(merger.release(deps.now() - deps.startedAtMs));
+    await attempt(async () => {
+      await drain(!active);
+      if (active) emit(merger.release(deps.now() - deps.startedAtMs));
+    });
+    if (!active) return void (await attempt(() => emit(merger.flush())));
     await deps.sleep(POLL_MS);
   }
 }

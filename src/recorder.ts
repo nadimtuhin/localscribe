@@ -158,7 +158,7 @@ export async function start(opts: StartOptions = {}, injected: Partial<RecorderD
     const latest = readState(statePath);
     if (latest) writeState(statePath, { ...latest, sidecars });
   };
-  const pluginStates = await runStartHooks(plugins, { base: partsBase, options: pluginOptions, micDevice, log: printLine, addSidecar });
+  const pluginStates = await runStartHooks(plugins, { base: partsBase, options: pluginOptions, micDevice, recorderPid: engineState.pid, log: printLine, addSidecar });
   // A `stop` during slow plugin startup clears the state; don't resurrect it.
   const current = readState(statePath);
   if (!current) {

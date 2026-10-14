@@ -52,13 +52,13 @@ describe("live plugin", () => {
   test("spawns mic segmenter, system segmenter and worker, registering every one as a sidecar", async () => {
     const { plugin, spawned } = setup();
     const sidecars: [number, string][] = [];
-    const state = await plugin.start!(context({ liveCaptions: true }, 2, sidecars));
+    const state = await plugin.start!({ ...context({ liveCaptions: true }, 2, sidecars), recorderPid: 4321 });
     const segmentDir = join(dir, "rec.live");
 
     expect(spawned.map((s) => s.command[0])).toEqual(["ffmpeg", "/bin/livesys", "bun"]);
     expect(spawned[0]!.command).toContain(":2");
     expect(spawned[0]!.command.at(-1)).toBe(join(segmentDir, "me_%05d.wav"));
-    expect(spawned[1]!.command).toEqual(["/bin/livesys", segmentDir, "6"]);
+    expect(spawned[1]!.command).toEqual(["/bin/livesys", segmentDir, "6", "--parent-pid", "4321"]);
     expect(spawned[2]!.command).toEqual(["bun", "/app/cli.ts", "live-worker", join(dir, "rec"), "me,them"]);
     expect(sidecars).toEqual([[101, "ffmpeg"], [102, "livesys"], [103, "bun"]]);
     expect(state).toEqual({ liveFile: join(dir, "rec.live.txt"), segmentDir });
