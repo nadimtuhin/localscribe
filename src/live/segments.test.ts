@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parseSegmentName, readySegments, segmentSpan } from "./segments.ts";
+import { buildMicSegmentArgs, parseSegmentName, readySegments, segmentSpan } from "./segments.ts";
 
 describe("parseSegmentName", () => {
   test("reads speaker and sequence", () => {
@@ -28,6 +28,15 @@ describe("readySegments", () => {
   test("is ordered by sequence, then speaker", () => {
     const names = ["them_00002.wav", "me_00002.wav", "them_00001.wav", "me_00001.wav", "me_00003.wav", "them_00003.wav"];
     expect(readySegments(names, new Set(), false)).toEqual(["me_00001.wav", "them_00001.wav", "me_00002.wav", "them_00002.wav"]);
+  });
+});
+
+describe("buildMicSegmentArgs", () => {
+  test("avfoundation mic to 16k mono wav segments starting at 1", () => {
+    expect(buildMicSegmentArgs({ micDevice: 2, dir: "/r/a.live" })).toEqual([
+      "-nostdin", "-hide_banner", "-f", "avfoundation", "-i", ":2", "-ac", "1", "-ar", "16000",
+      "-f", "segment", "-segment_time", "6", "-segment_format", "wav", "-segment_start_number", "1", "/r/a.live/me_%05d.wav",
+    ]);
   });
 });
 

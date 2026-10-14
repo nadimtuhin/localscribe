@@ -1,8 +1,8 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { realRunner, type ProcessRunner } from "../runner.ts";
-import { buildExtractAudioArgs, buildStreamArgs, buildWhisperArgs, segmentsToMarkdown } from "../transcription/core.ts";
+import { buildExtractAudioArgs, buildWhisperArgs, segmentsToMarkdown, whisperModelPath } from "../transcription/core.ts";
 import type { RecorderPlugin } from "./types.ts";
 
 const INSTALL_HINT = "install with: brew install whisper-cpp";
@@ -11,7 +11,7 @@ const NO_AUDIO = /does not contain any stream|matches no streams|no audio/i;
 export interface TranscriptionDeps { runner: ProcessRunner; env: Record<string, string | undefined> }
 
 export function createTranscription({ runner, env }: TranscriptionDeps = { runner: realRunner, env: process.env }): RecorderPlugin {
-  const modelPath = () => env.LOCALSCRIBE_WHISPER_MODEL ?? join(homedir(), ".hermes/models/whisper/ggml-base.en.bin");
+  const modelPath = () => whisperModelPath(env);
 
   const requireTool = (name: string) => {
     if (!runner.which(name)) throw new Error(`${name} not found, ${INSTALL_HINT}`);
@@ -25,16 +25,6 @@ export function createTranscription({ runner, env }: TranscriptionDeps = { runne
   return {
     name: "transcription",
     enabled: (options) => options.transcribe === true || options.liveCaptions === true,
-
-    async start(ctx) {
-      if (!ctx.options.liveCaptions) return null;
-      requireTool("whisper-stream");
-      const model = requireModel();
-      const file = `${ctx.base}.live.txt`;
-      const pid = runner.spawnDetached(["whisper-stream", ...buildStreamArgs({ model, file })], `${ctx.base}.live.log`);
-      ctx.addSidecar(pid, "whisper-stream");
-      return { liveFile: file };
-    },
 
     async stop(ctx) {
       requireTool("whisper-cli");

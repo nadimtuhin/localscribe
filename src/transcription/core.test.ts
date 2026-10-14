@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildExtractAudioArgs, buildStreamArgs, buildWhisperArgs, formatTimestamp, segmentsToMarkdown } from "./core.ts";
+import { buildExtractAudioArgs,buildWhisperArgs, formatTimestamp, segmentsToMarkdown } from "./core.ts";
 
 const fixture = await Bun.file(new URL("../../test/fixtures/whisper.json", import.meta.url)).json();
 
@@ -40,8 +40,5 @@ describe("argument builders", () => {
   });
   test("whisper-cli: json output to <prefix>.json", () => {
     expect(buildWhisperArgs({ model: "/m.bin", wav: "/t/a.wav", prefix: "/t/out" })).toEqual(["-m", "/m.bin", "-f", "/t/a.wav", "-oj", "-of", "/t/out"]);
-  });
-  test("whisper-stream: default input, appends to file", () => {
-    expect(buildStreamArgs({ model: "/m.bin", file: "/r/a.live.txt" })).toEqual(["-m", "/m.bin", "-c", "-1", "--step", "3000", "--length", "10000", "-f", "/r/a.live.txt"]);
   });
 });

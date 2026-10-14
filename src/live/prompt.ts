@@ -6,6 +6,11 @@ const clockMs = (line: string) => {
   return match ? (Number(match[1]) * 60 + Number(match[2])) * 1000 : null;
 };
 
+// Recording-clock time of the last timestamped line, 0 when there is none.
+export function lastClockMs(text: string): number {
+  return text.split("\n").reduce((latest, line) => clockMs(line) ?? latest, 0);
+}
+
 // Lines from the last 5 minutes. A line without a timestamp belongs with the line before it.
 export function recentLines(text: string, nowMs: number): string[] {
   let keep = false;

@@ -1,3 +1,6 @@
+import { homedir } from "node:os";
+import { join } from "node:path";
+
 export interface WhisperSegment { offsets: { from: number; to: number }; text: string }
 
 export function formatTimestamp(ms: number): string {
@@ -21,5 +24,5 @@ export const buildExtractAudioArgs = (input: string, wav: string) => ["-y", "-i"
 
 export const buildWhisperArgs = ({ model, wav, prefix }: { model: string; wav: string; prefix: string }) => ["-m", model, "-f", wav, "-oj", "-of", prefix];
 
-// -c -1 is the SDL default input. whisper-stream appends each caption line to -f (verified on a real run).
-export const buildStreamArgs = ({ model, file }: { model: string; file: string }) => ["-m", model, "-c", "-1", "--step", "3000", "--length", "10000", "-f", file];
+export const whisperModelPath = (env: Record<string, string | undefined>) =>
+  env.LOCALSCRIBE_WHISPER_MODEL ?? join(homedir(), ".hermes/models/whisper/ggml-base.en.bin");
