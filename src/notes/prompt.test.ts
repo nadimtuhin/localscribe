@@ -34,6 +34,13 @@ describe("buildNotesPrompt", () => {
     expect(prompt.match(/<\/manual_notes[^>]*>/g)).toHaveLength(1);
   });
 
+  test("a role adds one line before the data, none without a role", () => {
+    const prompt = buildNotesPrompt("[00:01] hello", "", "candidate");
+    expect(prompt).toContain("The user's role in this conversation: candidate");
+    expect(prompt.indexOf("role in this conversation")).toBeLessThan(prompt.indexOf("<transcript-"));
+    expect(buildNotesPrompt("x")).not.toContain("role in this conversation");
+  });
+
   test("asks for the five sections", () => {
     const prompt = buildNotesPrompt("x");
     for (const heading of ["## Summary", "## Key points", "## Decisions", "## Action items", "## Suggestions"]) {

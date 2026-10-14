@@ -37,6 +37,18 @@ describe("live command", () => {
     expect(result.errors.join()).toContain("terminal");
   });
 
+  test("a context file that can no longer be read is an error message, not a crash", async () => {
+    const errors: string[] = [];
+    const code = await createLiveCommand({
+      active: () => state(true),
+      isTty: true,
+      printError: (text) => void errors.push(text),
+      runTui: async () => { throw new Error("cannot read context file /x/gone.md: ENOENT"); },
+    })({ positionals: [], values: {} });
+    expect(code).toBe(1);
+    expect(errors).toEqual(["cannot read context file /x/gone.md: ENOENT"]);
+  });
+
   test("runs the tui for a live recording and exits 0", async () => {
     expect(await run(state(true))).toEqual({ code: 0, errors: [], ran: true });
   });

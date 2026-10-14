@@ -53,6 +53,16 @@ describe("generateNotes", () => {
     expect(prompt).toMatch(/<manual_notes-\w+>\n\[00:30\] note: ask about budget/);
   });
 
+  test("tells hermes the user's role when the recording has one", async () => {
+    withTranscript();
+    let prompt = "";
+    await generateNotes(base, { ...meta(dir), role: "interviewer" }, async (args) => {
+      prompt = args.at(-1)!;
+      return { exitCode: 0, stdout: reply, stderr: "", timedOut: false };
+    });
+    expect(prompt).toContain("The user's role in this conversation: interviewer");
+  });
+
   test("prefers the speaker-labelled <base>.live.txt over the mixed-audio transcript", async () => {
     withTranscript();
     writeFileSync(`${base}.live.txt`, "[00:01] me: what is the budget\n[00:04] them: ten thousand\n");
