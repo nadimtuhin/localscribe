@@ -6,9 +6,10 @@ import type { PluginContext, PluginOptions, RecorderPlugin, StartedContext } fro
 export interface PluginFlags { transcribe?: boolean; live?: boolean; notes?: boolean; "no-system-audio"?: boolean }
 
 // Live captions and notes are both built on the final transcript, so they turn it on.
+// --live also implies notes: the speaker-labelled live transcript is what they summarise.
 export function pluginOptionsFromFlags(flags: PluginFlags): PluginOptions {
   const liveCaptions = flags.live === true;
-  const notes = flags.notes === true;
+  const notes = flags.notes === true || liveCaptions;
   return { transcribe: flags.transcribe === true || liveCaptions || notes, liveCaptions, notes, systemAudio: flags["no-system-audio"] !== true };
 }
 

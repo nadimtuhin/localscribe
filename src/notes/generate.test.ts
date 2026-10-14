@@ -53,6 +53,29 @@ describe("generateNotes", () => {
     expect(prompt).toContain("<manual_notes>\n[00:30] note: ask about budget");
   });
 
+  test("prefers the speaker-labelled <base>.live.txt over the mixed-audio transcript", async () => {
+    withTranscript();
+    writeFileSync(`${base}.live.txt`, "[00:01] me: what is the budget\n[00:04] them: ten thousand\n");
+    let prompt = "";
+    await generateNotes(base, meta(dir), async (args) => {
+      prompt = args.at(-1)!;
+      return { exitCode: 0, stdout: reply, stderr: "", timedOut: false };
+    });
+    expect(prompt).toContain("[00:01] me: what is the budget");
+    expect(prompt).not.toContain("Okay, let's get started.");
+  });
+
+  test("falls back to the transcript when <base>.live.txt is empty", async () => {
+    withTranscript();
+    writeFileSync(`${base}.live.txt`, "");
+    let prompt = "";
+    await generateNotes(base, meta(dir), async (args) => {
+      prompt = args.at(-1)!;
+      return { exitCode: 0, stdout: reply, stderr: "", timedOut: false };
+    });
+    expect(prompt).toContain("Okay, let's get started.");
+  });
+
   test("removes the temp cwd afterwards, even when hermes fails", async () => {
     withTranscript();
     let cwd = "";

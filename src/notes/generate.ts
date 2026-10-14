@@ -29,7 +29,10 @@ const skipped = (message: string): NotesResult => ({ written: false, message });
 export async function generateNotes(base: string, meta: NotesMeta, run: HermesRun): Promise<NotesResult> {
   const transcriptPath = `${base}.transcript.md`;
   const notesPath = `${base}.notes.md`;
-  const transcript = existsSync(transcriptPath) ? readFileSync(transcriptPath, "utf8") : "";
+  const readIfExists = (path: string) => (existsSync(path) ? readFileSync(path, "utf8") : "");
+  // The live transcript knows who spoke (me/them); the final one is mixed audio.
+  const live = readIfExists(`${base}.live.txt`);
+  const transcript = live.trim() ? live : readIfExists(transcriptPath);
   if (!transcript.trim()) return skipped("notes: no transcript, skipped (run with --transcribe first)");
   if (existsSync(notesPath)) return skipped(`notes: ${notesPath} already exists, not overwriting`);
 

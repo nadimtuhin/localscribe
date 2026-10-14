@@ -74,6 +74,9 @@ describe("pluginOptionsFromFlags", () => {
     expect(pluginOptionsFromFlags({ live: true }).transcribe).toBe(true);
     expect(pluginOptionsFromFlags({ notes: true }).transcribe).toBe(true);
   });
+  test("--live implies notes", () => {
+    expect(pluginOptionsFromFlags({ live: true }).notes).toBe(true);
+  });
 });
 
 describe("registry", () => {
