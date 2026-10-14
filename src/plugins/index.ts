@@ -31,6 +31,8 @@ export async function runStartHooks(registry: RecorderPlugin[], ctx: StartedCont
 
 export interface StopHooksContext extends PluginContext {
   file: string;
+  startedAt: string;
+  durationMs: number;
   pluginStates: Record<string, unknown>;
 }
 

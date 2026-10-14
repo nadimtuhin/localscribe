@@ -193,6 +193,8 @@ export async function stop(injected: Partial<RecorderDeps> = {}): Promise<StopRe
       base: state.file.replace(/\.mp4$/, ""),
       options: state.pluginOptions ?? {},
       file: state.file,
+      startedAt: state.startedAt,
+      durationMs,
       pluginStates: state.plugins ?? {},
       log: printLine,
     });

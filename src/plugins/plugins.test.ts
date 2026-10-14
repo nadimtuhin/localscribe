@@ -49,7 +49,7 @@ describe("runStopHooks", () => {
     const calls: string[] = [];
     await runStopHooks([recordingPlugin("a", calls), recordingPlugin("b", calls)], {
       ...baseContext(),
-      file: "/r/demo.mp4",
+      file: "/r/demo.mp4", startedAt: "2026-10-14T10:00:00.000Z", durationMs: 1000,
       pluginStates: { a: 1, b: 2 },
     });
     expect(calls).toEqual(["a:stop:1", "b:stop:2"]);
@@ -59,7 +59,7 @@ describe("runStopHooks", () => {
     const calls: string[] = [];
     const lines: string[] = [];
     const broken = recordingPlugin("broken", calls, { stop: async () => { throw new Error("no whisper"); } });
-    await runStopHooks([broken, recordingPlugin("ok", calls)], { ...baseContext(lines), file: "/r/demo.mp4", pluginStates: {} });
+    await runStopHooks([broken, recordingPlugin("ok", calls)], { ...baseContext(lines), file: "/r/demo.mp4", startedAt: "2026-10-14T10:00:00.000Z", durationMs: 1000, pluginStates: {} });
     expect(lines).toEqual(["broken: no whisper"]);
     expect(calls).toEqual(["ok:stop:undefined"]);
   });

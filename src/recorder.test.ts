@@ -82,3 +82,15 @@ describe("state during plugin startup", () => {
     expect(readState(join(dir, "state.json"))).toBeNull();
   });
 });
+
+describe("stop context", () => {
+  test("stop hooks get startedAt and durationMs", async () => {
+    const runner = new FakeRunner();
+    const stopped: StoppedContext[] = [];
+    const plugin: RecorderPlugin = { name: "spy", enabled: () => true, stop: async (ctx) => { stopped.push(ctx); } };
+    const state = await start(startOptions(), deps(runner, [plugin]));
+    const result = await stop(deps(runner, [plugin]));
+    expect(stopped[0]!.startedAt).toBe(state.startedAt);
+    expect(stopped[0]!.durationMs).toBe(result.durationMs);
+  });
+});

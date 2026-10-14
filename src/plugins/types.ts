@@ -18,6 +18,8 @@ export interface StartedContext extends PluginContext {
 
 export interface StoppedContext extends PluginContext {
   file: string; // final mp4, finalized
+  startedAt: string; // ISO time the recording began
+  durationMs: number; // wall-clock length of the recording
   pluginState: unknown; // whatever this plugin's start() returned
 }
 
