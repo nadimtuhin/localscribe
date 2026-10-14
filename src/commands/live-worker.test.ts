@@ -40,7 +40,7 @@ function fakeWhisper(script: string) {
   return path;
 }
 
-const recording: RecordingState = { pid: 1, file: "", startedAt: STARTED_AT, pluginOptions: { transcribe: true, liveCaptions: true, lang: "en" } };
+const recording: RecordingState = { pid: 1, file: "", videoFile: "", videoHasMic: true, startedAt: STARTED_AT, pluginOptions: { transcribe: true, liveCaptions: true, lang: "en" } };
 
 function setup(options: { active?: RecordingState | null; whisper?: string; stopAfterSleeps?: number; onSleep?: (signals: Map<string, () => void>) => void } = {}) {
   const handlers = new Map<string, () => void>();
