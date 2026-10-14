@@ -7,6 +7,17 @@ const size = { cols: 40, rows: 16 };
 const base: ScreenState = { captions: [], suggestions: [], status: "", input: "" };
 const rows = (state: ScreenState, s = size) => plain(renderScreen(state, s)).split("\n");
 
+describe("renderScreen terminal safety", () => {
+  test("control characters in captions, suggestions and status never reach the terminal", () => {
+    const hostile = "evil\x1b[2J\x1b]0;pwned\x07\x9b31mtext\r";
+    const out = renderScreen({ ...base, captions: [hostile], suggestions: [hostile], status: hostile }, size);
+    const withoutOwnEscapes = out.replace(/\x1b\[(H|K|J|2m|22m|1m)/g, "");
+    const text = withoutOwnEscapes.replace(/\n/g, "");
+    expect(text).not.toMatch(/[\x00-\x1f\x7f-\x9f]/);
+    expect(text).toContain("evil[2J]0;pwned31mtext");
+  });
+});
+
 describe("renderScreen", () => {
   test("fills exactly the terminal height with the input line last", () => {
     const lines = rows({ ...base, input: "hello" });

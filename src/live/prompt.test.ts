@@ -39,6 +39,12 @@ describe("buildSuggestionPrompt", () => {
   });
 });
 
+describe("parseSuggestions terminal safety", () => {
+  test("strips control characters from model output", () => {
+    expect(parseSuggestions("- ask \x1b[2Jabout\x07 budget\x9b")).toEqual(["ask [2Jabout budget"]);
+  });
+});
+
 describe("parseSuggestions", () => {
   test("strips bullet markers, drops blanks, caps at 3", () => {
     expect(parseSuggestions("- one\n\n* two\n3. three\n- four\n")).toEqual(["one", "two", "three"]);

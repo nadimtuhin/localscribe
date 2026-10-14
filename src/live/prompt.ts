@@ -1,3 +1,5 @@
+import { stripControlChars } from "./render.ts";
+
 export const WINDOW_MS = 5 * 60_000;
 const MAX_SUGGESTIONS = 3;
 
@@ -39,7 +41,7 @@ export function buildSuggestionPrompt({ transcript, manual, nowMs }: { transcrip
 export function parseSuggestions(reply: string): string[] {
   return reply
     .split("\n")
-    .map((line) => line.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").trim())
+    .map((line) => stripControlChars(line).replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").trim())
     .filter(Boolean)
     .slice(0, MAX_SUGGESTIONS);
 }

@@ -10,7 +10,12 @@ export interface ScreenSize { cols: number; rows: number }
 const CHROME_ROWS = 3; // header, status, input
 const CAPTIONS_SHARE = 0.6;
 
-const cut = (text: string, cols: number) => (text.length > cols ? text.slice(0, cols) : text);
+// Captions and suggestions come from audio and a model, so they must not carry terminal escapes.
+export const stripControlChars = (text: string) => text.replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/g, "");
+const cut = (text: string, cols: number) => {
+  const safe = stripControlChars(text);
+  return safe.length > cols ? safe.slice(0, cols) : safe;
+};
 const dim = (text: string) => (text ? `\x1b[2m${text}\x1b[22m` : "");
 const bold = (text: string) => `\x1b[1m${text}\x1b[22m`;
 
