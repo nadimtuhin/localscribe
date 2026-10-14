@@ -21,4 +21,4 @@
 
 ## 4. Verification
 
-- [ ] 4.1 Real run: `say` through speakers ~40 s, live.txt with `me`/`them`, a real Hermes suggestion, a manual note
+- [x] 4.1 Real run: `say` through speakers ~40 s, live.txt with `me`/`them`, a real Hermes suggestion, a manual note
