@@ -5,7 +5,7 @@ export const createNotesPlugin = (run: HermesRun): RecorderPlugin => ({
   name: "notes",
   enabled: (options) => options.notes === true,
   async stop(ctx) {
-    await generateAndReport(ctx.base, { file: ctx.file, startedAt: ctx.startedAt, durationMs: ctx.durationMs, role: ctx.options.role }, ctx.log, run);
+    await generateAndReport(ctx.base, { file: ctx.file, startedAt: ctx.startedAt, durationMs: ctx.durationMs, role: ctx.options.role, lang: ctx.options.lang }, ctx.log, run);
   },
 });
 

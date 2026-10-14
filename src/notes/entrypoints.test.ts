@@ -82,3 +82,25 @@ describe("notes command", () => {
     expect(lines.at(-1)).toContain("usage: localscribe notes");
   });
 });
+
+describe("notes language", () => {
+  const promptOf = async (run: (hermes: HermesRun) => Promise<unknown>) => {
+    let prompt = "";
+    await run(async (args) => { prompt = args.at(-1)!; return { exitCode: 0, stdout: reply, stderr: "", timedOut: false }; });
+    return prompt;
+  };
+
+  test("the stop hook uses the recording's language", async () => {
+    const prompt = await promptOf((hermes) => runStopHooks([createNotesPlugin(hermes)], stopContext([], { notes: true, lang: "ur" } as never)));
+    expect(prompt).toContain("The conversation is in Urdu. Reply in Urdu.");
+  });
+
+  test("the notes command takes --lang as a name or code", async () => {
+    const prompt = await promptOf((hermes) => createNotesCommand(hermes, () => {})({ positionals: [`${base}.mp4`], values: { lang: "Arabic" } as never }));
+    expect(prompt).toContain("The conversation is in Arabic. Reply in Arabic.");
+  });
+
+  test("the notes command rejects an unknown --lang before calling hermes", async () => {
+    await expect(createNotesCommand(boom, () => {})({ positionals: [`${base}.mp4`], values: { lang: "klingon" } as never })).rejects.toThrow(/--lang expects/);
+  });
+});

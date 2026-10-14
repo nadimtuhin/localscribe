@@ -129,3 +129,22 @@ describe("parseAnswer", () => {
     expect(parseAnswer(" \n")).toEqual([]);
   });
 });
+
+describe("conversation language", () => {
+  const input = { transcript, manual: "", nowMs: 600_000 };
+
+  test("suggestion and ask prompts state the language before the data", () => {
+    for (const prompt of [buildSuggestionPrompt({ ...input, lang: "hi" }), buildAskPrompt({ ...input, lang: "hi", question: "q" })]) {
+      expect(prompt).toContain("The conversation is in Hindi. Reply in Hindi.");
+      expect(prompt.indexOf("Reply in Hindi")).toBeLessThan(prompt.indexOf("<transcript-"));
+    }
+  });
+
+  test("auto asks for the conversation's own language", () => {
+    expect(buildSuggestionPrompt({ ...input, lang: "auto" })).toContain("Reply in the language of the conversation.");
+  });
+
+  test("no language, no language line", () => {
+    expect(buildSuggestionPrompt(input)).not.toContain("conversation is in");
+  });
+});

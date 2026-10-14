@@ -26,6 +26,7 @@ async function runRealTui(recording: RecordingState): Promise<void> {
   const context = loadContextFiles(recording.pluginOptions?.contextFiles ?? [], (path) => readFileSync(path, "utf8"));
   const session = createLiveSession({
     role: recording.pluginOptions?.role,
+    lang: recording.pluginOptions?.lang,
     context,
     startedAtMs: Date.parse(recording.startedAt),
     now: Date.now,

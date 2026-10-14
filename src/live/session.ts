@@ -16,6 +16,7 @@ export interface LiveSessionDeps {
   appendSuggestions: (text: string) => void;
   run: HermesRun;
   role?: Role;
+  lang?: string;
   context?: ContextFile[];
 }
 
@@ -41,7 +42,7 @@ export function createLiveSession(deps: LiveSessionDeps) {
   let pending: Promise<void> = Promise.resolve();
 
   const elapsedMs = () => deps.now() - deps.startedAtMs;
-  const promptInput = () => ({ transcript: deps.readLive(), manual: deps.readManual(), nowMs: elapsedMs(), role: deps.role, context: deps.context });
+  const promptInput = () => ({ transcript: deps.readLive(), manual: deps.readManual(), nowMs: elapsedMs(), role: deps.role, lang: deps.lang, context: deps.context });
 
   function show(lines: string[]) {
     state.suggestions.push(...lines);

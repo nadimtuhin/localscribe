@@ -8,7 +8,7 @@ const START = 1_000_000;
 const reply = (stdout: string): HermesResult => ({ exitCode: 0, stdout, stderr: "", timedOut: false });
 const isAsk = (prompt: string) => prompt.includes("Question from the user:");
 
-function setup(run: HermesRun, extra: { role?: Role; context?: ContextFile[] } = {}) {
+function setup(run: HermesRun, extra: { role?: Role; context?: ContextFile[]; lang?: string } = {}) {
   const clock = { now: START };
   const files = { live: "", manual: "", suggestions: "" };
   const prompts: string[] = [];
@@ -156,5 +156,18 @@ describe("role", () => {
     await session.pending;
     expect(prompts).toHaveLength(2);
     for (const prompt of prompts) expect(prompt).toMatch(/candidate[\s\S]*latest question/);
+  });
+});
+
+describe("language", () => {
+  test("the language reaches both auto suggestions and asks", async () => {
+    const { files, prompts, session, type } = setup(async () => reply("- x"), { lang: "bn" });
+    files.live = "[00:05] them: tell me about a hard bug\n";
+    await session.tick();
+    await session.pending;
+    type("?what now");
+    await session.pending;
+    expect(prompts).toHaveLength(2);
+    for (const prompt of prompts) expect(prompt).toContain("The conversation is in Bangla. Reply in Bangla.");
   });
 });

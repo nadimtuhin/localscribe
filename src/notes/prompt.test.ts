@@ -94,3 +94,16 @@ describe("buildHermesArgs", () => {
     expect(args.slice(-5)).toEqual(["--ignore-rules", "-t", "todo", "-z", "P"]);
   });
 });
+
+describe("buildNotesPrompt language", () => {
+  test("states the conversation language before the transcript", () => {
+    const prompt = buildNotesPrompt("[00:01] namaste", "", undefined, "hi");
+    expect(prompt).toContain("The conversation is in Hindi. Reply in Hindi.");
+    expect(prompt.indexOf("Reply in Hindi")).toBeLessThan(prompt.indexOf("<transcript-"));
+  });
+
+  test("auto asks for the conversation's own language, none leaves the prompt unchanged", () => {
+    expect(buildNotesPrompt("x", "", undefined, "auto")).toContain("Reply in the language of the conversation.");
+    expect(buildNotesPrompt("x")).not.toContain("conversation is in");
+  });
+});

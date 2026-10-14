@@ -57,3 +57,12 @@ describe("runCli", () => {
     for (const flag of ["--window", "--area", "--display", "--engine", "devices"]) expect(help).toContain(flag);
   });
 });
+
+describe("help", () => {
+  test("documents --lang for start and notes", async () => {
+    await runCli([]);
+    const help = out.join("\n");
+    expect(help).toMatch(/start .*\n(.*\n)*.*\[--lang <language>\]/);
+    expect(help).toMatch(/notes <mp4\|transcript\.md> \[--lang <language>\]/);
+  });
+});
