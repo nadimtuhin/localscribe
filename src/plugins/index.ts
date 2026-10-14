@@ -3,9 +3,11 @@ import { annotation } from "./annotation.ts";
 import { live } from "./live.ts";
 import { notes as notesPlugin } from "./notes.ts";
 import { transcription } from "./transcription.ts";
+import { requireWhisperModel } from "../transcription/core.ts";
+import { DEFAULT_LANGUAGE, parseLanguage } from "../transcription/language.ts";
 import type { PluginContext, PluginOptions, RecorderPlugin, StartedContext } from "./types.ts";
 
-export interface PluginFlags { transcribe?: boolean; draw?: boolean; live?: boolean; notes?: boolean; "no-system-audio"?: boolean; role?: string; context?: string[] }
+export interface PluginFlags { transcribe?: boolean; draw?: boolean; live?: boolean; notes?: boolean; "no-system-audio"?: boolean; role?: string; context?: string[]; lang?: string }
 
 // Live captions and notes are both built on the final transcript, so they turn it on.
 // --live also implies notes: the speaker-labelled live transcript is what they summarise.
@@ -19,6 +21,7 @@ export function pluginOptionsFromFlags(flags: PluginFlags): PluginOptions {
     notes,
     systemAudio: flags["no-system-audio"] !== true,
     draw: flags.draw === true,
+    lang: parseLanguage(flags.lang ?? DEFAULT_LANGUAGE),
     ...(liveCaptions ? liveOptionsFromFlags(flags) : {}),
   };
 }
@@ -61,4 +64,9 @@ export async function runStopHooks(registry: RecorderPlugin[], ctx: StopHooksCon
       ctx.log(`${plugin.name}: ${errorMessage(error)}`);
     }
   }
+}
+
+// Transcription runs only after the recording, so a missing model would otherwise be found too late.
+export function requireModelForStart(options: PluginOptions, env: Record<string, string | undefined>, exists?: (path: string) => boolean): void {
+  if (options.transcribe) requireWhisperModel(env, options.lang ?? DEFAULT_LANGUAGE, exists);
 }

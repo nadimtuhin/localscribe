@@ -3,7 +3,8 @@ import { join } from "node:path";
 import { ensureLiveHelper } from "../live/helper.ts";
 import { buildMicSegmentArgs, SEGMENT_SECONDS } from "../live/segments.ts";
 import { realRunner, type ProcessRunner } from "../runner.ts";
-import { whisperModelPath } from "../transcription/core.ts";
+import { requireWhisperModel } from "../transcription/core.ts";
+import { DEFAULT_LANGUAGE } from "../transcription/language.ts";
 import type { RecorderPlugin } from "./types.ts";
 
 const CLI_PATH = join(import.meta.dir, "..", "cli.ts");
@@ -31,8 +32,7 @@ export function createLivePlugin(deps: LiveDeps = realDeps()): RecorderPlugin {
 
     async start(ctx) {
       if (!runner.which("whisper-cli")) throw new Error("whisper-cli not found, install with: brew install whisper-cpp");
-      const model = whisperModelPath(env);
-      if (!existsSync(model)) throw new Error(`whisper model not found: ${model} (set LOCALSCRIBE_WHISPER_MODEL)`);
+      requireWhisperModel(env, ctx.options.lang ?? DEFAULT_LANGUAGE);
 
       const segmentDir = `${ctx.base}.live`;
       const liveFile = `${ctx.base}.live.txt`;

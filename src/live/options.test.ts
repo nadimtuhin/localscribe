@@ -56,6 +56,6 @@ describe("pluginOptionsFromFlags with live modes", () => {
   });
 
   test("without the new flags the options are unchanged", () => {
-    expect(pluginOptionsFromFlags({ live: true })).toEqual({ transcribe: true, liveCaptions: true, notes: true, systemAudio: true, draw: false, role: "meeting", contextFiles: [] });
+    expect(pluginOptionsFromFlags({ live: true })).toEqual({ transcribe: true, liveCaptions: true, notes: true, systemAudio: true, draw: false, lang: "en", role: "meeting", contextFiles: [] });
   });
 });

@@ -1,5 +1,7 @@
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
+import { DEFAULT_LANGUAGE } from "./language.ts";
 
 export interface WhisperSegment { offsets: { from: number; to: number }; text: string }
 
@@ -26,7 +28,20 @@ export function segmentsToMarkdown(segments: WhisperSegment[]): string {
 
 export const buildExtractAudioArgs = (input: string, wav: string) => ["-y", "-i", input, "-vn", "-ac", "1", "-ar", "16000", wav];
 
-export const buildWhisperArgs = ({ model, wav, prefix }: { model: string; wav: string; prefix: string }) => ["-m", model, "-f", wav, "-oj", "-of", prefix];
+export const buildWhisperArgs = ({ model, wav, prefix, lang }: { model: string; wav: string; prefix: string; lang: string }) => ["-m", model, "-f", wav, "-l", lang, "-oj", "-of", prefix];
 
-export const whisperModelPath = (env: Record<string, string | undefined>) =>
-  env.LOCALSCRIBE_WHISPER_MODEL ?? join(homedir(), ".hermes/models/whisper/ggml-base.en.bin");
+const MODELS_DIR = join(homedir(), ".hermes/models/whisper");
+const MODEL_URL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main";
+
+export class WhisperModelError extends Error {}
+
+// English has its own smaller, faster model; every other language (and auto-detect) needs the multilingual one.
+export const whisperModelPath = (env: Record<string, string | undefined>, lang: string = DEFAULT_LANGUAGE) =>
+  env.LOCALSCRIBE_WHISPER_MODEL ?? join(MODELS_DIR, lang === "en" ? "ggml-base.en.bin" : "ggml-small.bin");
+
+export function requireWhisperModel(env: Record<string, string | undefined>, lang: string, exists: (path: string) => boolean = existsSync): string {
+  const model = whisperModelPath(env, lang);
+  if (exists(model)) return model;
+  const fix = env.LOCALSCRIBE_WHISPER_MODEL !== undefined ? " (set LOCALSCRIBE_WHISPER_MODEL)" : `. Download it with: curl -L -o ${model} ${MODEL_URL}/${basename(model)}`;
+  throw new WhisperModelError(`whisper model not found: ${model}${fix}`);
+}

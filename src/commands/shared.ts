@@ -33,6 +33,7 @@ export const cliOptions = {
   display: { type: "string" },
   engine: { type: "string" },
   role: { type: "string" },
+  lang: { type: "string" },
   context: { type: "string", multiple: true },
   json: { type: "boolean" },
   help: { type: "boolean", short: "h" },

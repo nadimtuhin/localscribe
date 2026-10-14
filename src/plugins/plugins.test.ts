@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { pluginOptionsFromFlags, plugins, runStartHooks, runStopHooks } from "./index.ts";
+import { parseArgs } from "node:util";
+import { cliOptions } from "../commands/shared.ts";
+import { pluginOptionsFromFlags, plugins, requireModelForStart, runStartHooks, runStopHooks } from "./index.ts";
 import type { PluginOptions, RecorderPlugin } from "./types.ts";
 
 function recordingPlugin(name: string, calls: string[], overrides: Partial<RecorderPlugin> = {}): RecorderPlugin {
@@ -67,7 +69,7 @@ describe("runStopHooks", () => {
 
 describe("pluginOptionsFromFlags", () => {
   test("nothing enabled by default", () => {
-    expect(pluginOptionsFromFlags({})).toEqual({ transcribe: false, liveCaptions: false, notes: false, systemAudio: true, draw: false });
+    expect(pluginOptionsFromFlags({})).toEqual({ transcribe: false, liveCaptions: false, notes: false, systemAudio: true, draw: false, lang: "en" });
     expect(pluginOptionsFromFlags({ "no-system-audio": true }).systemAudio).toBe(false);
   });
   test("--live and --notes both need a transcript", () => {
@@ -93,5 +95,35 @@ describe("registry", () => {
     expect(transcription.enabled({ liveCaptions: true })).toBe(true);
     expect(notes.enabled({ transcribe: true })).toBe(false);
     expect(notes.enabled({ notes: true })).toBe(true);
+  });
+});
+
+describe("pluginOptionsFromFlags --lang", () => {
+  test("stores the whisper code for a name or code, case-insensitive", () => {
+    expect(pluginOptionsFromFlags({ lang: "Hindi" }).lang).toBe("hi");
+    expect(pluginOptionsFromFlags({ lang: "BN", live: true }).lang).toBe("bn");
+    expect(pluginOptionsFromFlags({ lang: "auto" }).lang).toBe("auto");
+  });
+
+  test("an unknown language fails before recording starts", () => {
+    expect(() => pluginOptionsFromFlags({ lang: "klingon" })).toThrow(/--lang expects .*got "klingon"/);
+  });
+
+  test("--lang is a string flag", () => {
+    const { values } = parseArgs({ args: ["start", "--lang", "hindi"], options: cliOptions, allowPositionals: true });
+    expect(values.lang).toBe("hindi");
+  });
+});
+
+describe("requireModelForStart", () => {
+  const options = (lang: string, transcribe = true) => ({ transcribe, lang });
+
+  test("a missing multilingual model stops start with the download command", () => {
+    expect(() => requireModelForStart(options("hi"), {}, () => false)).toThrow(/^whisper model not found: .*ggml-small\.bin\. Download it with: curl -L -o .*ggml-small\.bin https:\/\/huggingface\.co\/ggerganov\/whisper\.cpp\/resolve\/main\/ggml-small\.bin$/);
+  });
+
+  test("nothing to check when no transcription is wanted, or the model is there", () => {
+    expect(() => requireModelForStart(options("hi", false), {}, () => false)).not.toThrow();
+    expect(() => requireModelForStart(options("hi"), {}, () => true)).not.toThrow();
   });
 });

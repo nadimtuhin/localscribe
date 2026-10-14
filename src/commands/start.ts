@@ -1,7 +1,7 @@
 import { listSources } from "../capture/devices.ts";
 import { parsePick, resolveSelection, type Selection, type SelectionFlags } from "../capture/selection.ts";
 import { ensureToolPath } from "../ffmpeg.ts";
-import { pluginOptionsFromFlags } from "../plugins/index.ts";
+import { pluginOptionsFromFlags, requireModelForStart } from "../plugins/index.ts";
 import { CAPTURE, ensureHelper, RecorderError, start } from "../recorder.ts";
 import { realRunner, type ProcessRunner } from "../runner.ts";
 import { liveCommand } from "./live.ts";
@@ -36,6 +36,8 @@ export const startCommand: Command = async (args) => {
   const { values } = args;
   ensureToolPath();
   const engine = parseEngine(values.engine);
+  const plugins = pluginOptionsFromFlags(values);
+  requireModelForStart(plugins, process.env);
   const wantsSelection = values.window !== undefined || values.area !== undefined || values.display !== undefined;
   const selection = wantsSelection ? selectionForStart(values, realRunner, ensureHelper(realRunner, CAPTURE)) : undefined;
   const state = await start({
@@ -44,7 +46,7 @@ export const startCommand: Command = async (args) => {
     fps: optionalNumber(values.fps),
     mic: values["no-mic"] ? false : optionalNumber(values.mic),
     systemAudio: !values["no-system-audio"],
-    plugins: pluginOptionsFromFlags(values),
+    plugins,
     selection,
     engine,
   });

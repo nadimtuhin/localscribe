@@ -4,6 +4,7 @@ import { buildSegmentWhisperArgs, runLiveWorker } from "../live/worker.ts";
 import type { Speaker } from "../live/segments.ts";
 import { activeRecording, readActive } from "../recorder.ts";
 import { whisperModelPath } from "../transcription/core.ts";
+import { DEFAULT_LANGUAGE } from "../transcription/language.ts";
 import type { Command } from "./shared.ts";
 
 const HOLD_MS = 15_000;
@@ -16,7 +17,8 @@ export const liveWorkerCommand: Command = async ({ positionals }) => {
   if (!base || !recording) return 1;
 
   const dir = `${base}.live`;
-  const model = whisperModelPath(process.env);
+  const lang = recording.pluginOptions?.lang ?? DEFAULT_LANGUAGE;
+  const model = whisperModelPath(process.env, lang);
   let interrupted = false;
   for (const signal of ["SIGINT", "SIGTERM"] as const) process.on(signal, () => void (interrupted = true));
 
@@ -31,7 +33,7 @@ export const liveWorkerCommand: Command = async ({ positionals }) => {
     },
     readBytes: (name) => readFileSync(join(dir, name)),
     transcribe: async (name) => {
-      const child = Bun.spawn(["whisper-cli", ...buildSegmentWhisperArgs({ model, wav: join(dir, name) })], { stdout: "pipe", stderr: "ignore", stdin: "ignore" });
+      const child = Bun.spawn(["whisper-cli", ...buildSegmentWhisperArgs({ model, wav: join(dir, name), lang })], { stdout: "pipe", stderr: "ignore", stdin: "ignore" });
       const [text, exitCode] = await Promise.all([new Response(child.stdout).text(), child.exited]);
       if (exitCode !== 0) throw new Error(`whisper-cli exit ${exitCode}`);
       return text;

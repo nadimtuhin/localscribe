@@ -8,6 +8,7 @@ export interface PluginOptions {
   draw?: boolean; // --draw
   role?: "candidate" | "interviewer" | "meeting"; // --role, set with --live
   contextFiles?: string[]; // --context paths, absolute, set with --live
+  lang?: string; // --lang as a whisper code or "auto"; "en" when unset
 }
 
 export interface PluginContext {

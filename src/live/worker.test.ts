@@ -50,7 +50,7 @@ function harness(opts: { speakers?: ("me" | "them")[]; texts: Record<string, str
 
 describe("buildSegmentWhisperArgs", () => {
   test("plain text on stdout: no timestamps, no progress prints", () => {
-    expect(buildSegmentWhisperArgs({ model: "/m.bin", wav: "/d/me_00001.wav" })).toEqual(["-m", "/m.bin", "-f", "/d/me_00001.wav", "-nt", "-np"]);
+    expect(buildSegmentWhisperArgs({ model: "/m.bin", wav: "/d/me_00001.wav", lang: "bn" })).toEqual(["-m", "/m.bin", "-f", "/d/me_00001.wav", "-l", "bn", "-nt", "-np"]);
   });
 });
 

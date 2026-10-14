@@ -133,6 +133,16 @@ describe("stop", () => {
     expect(ran).toEqual([]);
   });
 
+  test("passes the recording language to whisper-cli, en by default", async () => {
+    const { runner, ran } = fakeRunner();
+    const plugin = createTranscription({ runner, env: { LOCALSCRIBE_WHISPER_MODEL: model } });
+    const langOf = (command: string[] | undefined) => command![command!.indexOf("-l") + 1];
+    await runStopHooks([plugin], { ...stoppedContext(join(dir, "a"), []), options: { transcribe: true, lang: "hi" }, pluginStates: {} });
+    await runStopHooks([plugin], { ...stoppedContext(join(dir, "b"), []), pluginStates: {} });
+    expect(langOf(ran.filter((command) => command[0] === "whisper-cli")[0])).toBe("hi");
+    expect(langOf(ran.filter((command) => command[0] === "whisper-cli")[1])).toBe("en");
+  });
+
   test("whisper-cli failure surfaces stderr", async () => {
     const { runner } = fakeRunner({ whisper: { exitCode: 2, stderr: "bad model" } });
     const lines: string[] = [];

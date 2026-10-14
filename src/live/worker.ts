@@ -19,7 +19,7 @@ export interface WorkerDeps {
 
 const POLL_MS = 1000;
 
-export const buildSegmentWhisperArgs = ({ model, wav }: { model: string; wav: string }) => ["-m", model, "-f", wav, "-nt", "-np"];
+export const buildSegmentWhisperArgs = ({ model, wav, lang }: { model: string; wav: string; lang: string }) => ["-m", model, "-f", wav, "-l", lang, "-nt", "-np"];
 
 // Transcribes each closed segment exactly once and appends `[mm:ss] who: text` lines in time order.
 export async function runLiveWorker(deps: WorkerDeps): Promise<void> {
