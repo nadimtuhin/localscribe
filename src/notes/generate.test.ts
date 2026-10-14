@@ -36,7 +36,7 @@ describe("generateNotes", () => {
     });
     expect(seen!.args).toContain("--ignore-rules");
     expect(seen!.args.slice(seen!.args.indexOf("-t"), seen!.args.indexOf("-t") + 2)).toEqual(["-t", "todo"]);
-    expect(seen!.args.at(-1)).toContain("<transcript>\n[00:00] Okay, let's get started.");
+    expect(seen!.args.at(-1)).toMatch(/<transcript-\w+>\n\[00:00\] Okay, let.s get started./);
     expect(seen!.timeoutMs).toBe(120_000);
     expect(seen!.cwd).not.toBe(dir);
     expect(seen!.cwd).not.toBe(process.cwd());
@@ -50,7 +50,7 @@ describe("generateNotes", () => {
       prompt = args.at(-1)!;
       return { exitCode: 0, stdout: reply, stderr: "", timedOut: false };
     });
-    expect(prompt).toContain("<manual_notes>\n[00:30] note: ask about budget");
+    expect(prompt).toMatch(/<manual_notes-\w+>\n\[00:30\] note: ask about budget/);
   });
 
   test("prefers the speaker-labelled <base>.live.txt over the mixed-audio transcript", async () => {
