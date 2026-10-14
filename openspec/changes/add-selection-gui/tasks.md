@@ -6,7 +6,7 @@
 
 ## 2. CLI
 
-- [ ] 2.1 `devices [--json]` (pure formatter tested with fixtures)
+- [ ] 2.1 `devices [--json]` (pure formatter tested with fixtures): fill the stub in `src/commands/devices.ts`; the `--window/--area/--display/--engine/--json` flags are already in `src/commands/shared.ts` and HELP
 - [ ] 2.2 `--window`, `--area`, `--display`, `--engine`; pure arg parsing/validation tests
 - [ ] 2.3 Recorder: SCK engine path (video+sys from helper, mic from ffmpeg), mux of three parts
 

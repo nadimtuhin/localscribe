@@ -7,6 +7,10 @@ When `--transcribe` is enabled, the recorder SHALL write `<base>.transcript.md` 
 - **WHEN** the user runs `localscribe start --transcribe`, speaks, then `localscribe stop`
 - **THEN** `<base>.transcript.md` exists with one `[mm:ss] text` line per segment and the CLI prints its path
 
+#### Scenario: Timestamps from whisper offsets
+- **WHEN** whisper-cli reports a segment with `offsets.from` of 83000 (milliseconds) and text ` Hello there.`
+- **THEN** the transcript line is `[01:23] Hello there.` (leading space trimmed)
+
 #### Scenario: whisper missing
 - **WHEN** `whisper-cli` or the model file is missing
 - **THEN** the CLI prints `transcription: <reason>` with an install hint, keeps the mp4, and exits 0
