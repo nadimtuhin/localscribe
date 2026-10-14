@@ -1,10 +1,10 @@
 ## 1. Pure units (TDD)
 
-- [ ] 1.1 Segment readiness and timing (`src/live/segments.ts`)
-- [ ] 1.2 Live line formatting, non-speech filter, repeat drop, `LiveMerger` ordering (`src/live/lines.ts`)
-- [ ] 1.3 Suggestion cadence with fake clock (`src/live/cadence.ts`)
-- [ ] 1.4 Suggestion prompt and reply parsing (`src/live/prompt.ts`)
-- [ ] 1.5 Manual-note stamping (`src/live/manual.ts`)
+- [x] 1.1 Segment readiness and timing (`src/live/segments.ts`)
+- [x] 1.2 Live line formatting, non-speech filter, repeat drop, `LiveMerger` ordering (`src/live/lines.ts`)
+- [x] 1.3 Suggestion cadence with fake clock (`src/live/cadence.ts`)
+- [x] 1.4 Suggestion prompt and reply parsing (`src/live/prompt.ts`)
+- [x] 1.5 Manual-note stamping (`src/live/manual.ts`)
 - [ ] 1.6 `renderScreen` pure render and input key reducer (`src/live/render.ts`)
 - [ ] 1.7 Manual notes in final notes prompt and `generateNotes`
 

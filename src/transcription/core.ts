@@ -7,7 +7,7 @@ export function formatTimestamp(ms: number): string {
 }
 
 // Whisper emits markers like [BLANK_AUDIO] or (music) for non-speech; they are not transcript.
-const isNonSpeech = (text: string) => text === "" || /^[[(].*[\])]$/.test(text);
+export const isNonSpeech = (text: string) => text === "" || /^[[(].*[\])]$/.test(text);
 
 export function segmentsToMarkdown(segments: WhisperSegment[]): string {
   return segments
