@@ -9,6 +9,7 @@ import type { PluginOptions, RecorderPlugin } from "./plugins/types.ts";
 import { realRunner, type ProcessRunner } from "./runner.ts";
 
 const STOP_TIMEOUT_MS = 10_000;
+const DRAIN_TIMEOUT_MS = 30_000;
 const STARTUP_CHECK_MS = 1_500;
 const PROJECT_ROOT = join(import.meta.dir, "..");
 const SYSAUDIO = { source: join(PROJECT_ROOT, "native", "sysaudio.swift"), binary: join(PROJECT_ROOT, "bin", "sysaudio") };
@@ -152,8 +153,8 @@ export async function start(opts: StartOptions = {}, injected: Partial<RecorderD
   }
 
   const sidecars: Sidecar[] = [];
-  const addSidecar = (pid: number, exe: string) => {
-    sidecars.push({ pid, exe });
+  const addSidecar = (pid: number, exe: string, options?: { drain?: boolean }) => {
+    sidecars.push(options?.drain ? { pid, exe, drain: true } : { pid, exe });
     const latest = readState(statePath);
     if (latest) writeState(statePath, { ...latest, sidecars });
   };
@@ -170,19 +171,22 @@ export async function start(opts: StartOptions = {}, injected: Partial<RecorderD
 }
 
 // With an executable name the pid is verified first, so a reused pid is never signalled.
-async function interrupt(runner: ProcessRunner, pid: number, exe?: string): Promise<{ forced: boolean }> {
+async function interrupt(runner: ProcessRunner, pid: number, exe?: string, timeoutMs = STOP_TIMEOUT_MS): Promise<{ forced: boolean }> {
   const alive = () => (exe === undefined ? runner.isAlive(pid) : runner.isRunning(pid, exe));
   if (!alive()) return { forced: false };
   runner.kill(pid, "SIGINT");
-  const deadline = Date.now() + STOP_TIMEOUT_MS;
+  const deadline = Date.now() + timeoutMs;
   while (alive() && Date.now() < deadline) await runner.sleep(100);
   const forced = alive();
   if (forced) runner.kill(pid, "SIGKILL");
   return { forced };
 }
 
-const interruptSidecars = (runner: ProcessRunner, sidecars: Sidecar[]) =>
-  Promise.all(sidecars.map(({ pid, exe }) => interrupt(runner, pid, exe)));
+// Draining sidecars go last so they can finish what the others were still writing.
+async function interruptSidecars(runner: ProcessRunner, sidecars: Sidecar[]) {
+  await Promise.all(sidecars.filter((s) => !s.drain).map(({ pid, exe }) => interrupt(runner, pid, exe)));
+  await Promise.all(sidecars.filter((s) => s.drain).map(({ pid, exe }) => interrupt(runner, pid, exe, DRAIN_TIMEOUT_MS)));
+}
 
 export interface StopResult {
   file: string;

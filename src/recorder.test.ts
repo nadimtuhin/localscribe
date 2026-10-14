@@ -122,6 +122,23 @@ describe("sidecars", () => {
     expect(sidecarAliveInHook).toBe(false);
   });
 
+  test("stop interrupts draining sidecars only after the others have exited", async () => {
+    const runner = new FakeRunner();
+    const plugin: RecorderPlugin = {
+      name: "pipeline",
+      enabled: () => true,
+      start: async (ctx) => {
+        ctx.addSidecar(runner.spawnDetached(["worker"]), "worker", { drain: true });
+        ctx.addSidecar(runner.spawnDetached(["segmenter"]), "segmenter");
+        return null;
+      },
+    };
+    await start(startOptions(), deps(runner, [plugin]));
+    await stop(deps(runner, [plugin]));
+    const sidecarSignals = runner.signals.filter((s) => s === "SIGINT:1001" || s === "SIGINT:1002");
+    expect(sidecarSignals).toEqual(["SIGINT:1002", "SIGINT:1001"]);
+  });
+
   test("stop kills sidecars even when mixing fails", async () => {
     const runner = new FakeRunner();
     runner.run = (command: string[]) =>

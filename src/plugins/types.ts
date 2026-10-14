@@ -17,7 +17,7 @@ export interface StartedContext extends PluginContext {
   micDevice?: number; // avfoundation audio index chosen by the recorder
   // Register a detached process the plugin spawned. The recorder interrupts it on stop, and when
   // cleaning up a crashed recording, so a plugin never has to persist or kill pids itself.
-  addSidecar(pid: number, executableName: string): void;
+  addSidecar(pid: number, executableName: string, options?: { drain?: boolean }): void;
 }
 
 export interface StoppedContext extends PluginContext {

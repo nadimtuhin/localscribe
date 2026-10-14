@@ -83,6 +83,22 @@ describe("live plugin", () => {
     expect(noSystem.spawned[1]!.command.at(-1)).toBe("me");
   });
 
+  test("the worker is a draining sidecar so it outlives the segmenters", async () => {
+    const { plugin } = setup();
+    const registered: { exe: string; drain?: boolean }[] = [];
+    await plugin.start!({ ...context({ liveCaptions: true }, 2), addSidecar: (_pid, exe, options) => void registered.push({ exe, drain: options?.drain }) });
+    expect(registered).toEqual([{ exe: "ffmpeg" }, { exe: "livesys" }, { exe: "bun", drain: true }]);
+  });
+
+  test("stop removes the segment dir but keeps the live transcript", async () => {
+    const { plugin } = setup();
+    const state = await plugin.start!(context({ liveCaptions: true }, 0));
+    writeFileSync(join(dir, "rec.live", "me_00001.wav"), "x");
+    await plugin.stop!({ base: join(dir, "rec"), options: { liveCaptions: true }, log: () => {}, file: join(dir, "rec.mp4"), startedAt: "", durationMs: 0, pluginState: state });
+    expect(existsSync(join(dir, "rec.live"))).toBe(false);
+    expect(existsSync(join(dir, "rec.live.txt"))).toBe(true);
+  });
+
   test("missing whisper-cli or model is a logged plugin error and spawns nothing", async () => {
     const lacking = setup(["ffmpeg"]);
     const lines: string[] = [];

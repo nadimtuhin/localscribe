@@ -3,7 +3,8 @@ import { dirname } from "node:path";
 import type { Selection } from "./capture/selection.ts";
 import type { PluginOptions } from "./plugins/types.ts";
 
-export interface Sidecar { pid: number; exe: string }
+// `drain`: stopped after every other process, with a longer timeout, because it flushes their output.
+export interface Sidecar { pid: number; exe: string; drain?: boolean }
 
 export interface RecordingState {
   pid: number; // ffmpeg (screen + mic), or the capture helper when engine is "sck"
