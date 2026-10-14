@@ -99,6 +99,24 @@ describe("generateNotes", () => {
     expect(existsSync(cwd)).toBe(false);
   });
 
+  test("asks hermes to stamp bullets and drops stamps past the recording duration", async () => {
+    withTranscript();
+    let prompt = "";
+    const stamped = "## Key points\n- [00:30] real\n- [09:00] invented\n## Action items\n- [ ] [01:00] send";
+    await generateNotes(base, meta(dir), async (args) => {
+      prompt = args.at(-1)!;
+      return { exitCode: 0, stdout: stamped, stderr: "", timedOut: false };
+    });
+    expect(prompt).toContain("[mm:ss]");
+    expect(readFileSync(`${base}.notes.md`, "utf8")).toEndWith("## Key points\n- [00:30] real\n- invented\n## Action items\n- [ ] [01:00] send\n");
+  });
+
+  test("without a known duration, stamps are checked against the last transcript time", async () => {
+    writeFileSync(`${base}.live.txt`, "[00:01] me: hi\n[00:40] them: bye\n");
+    await generateNotes(base, { file: join(dir, "rec.mp4"), startedAt: "2026-10-14T22:05:29.000Z" }, ok("- [00:40] ok\n- [00:41] too late"));
+    expect(readFileSync(`${base}.notes.md`, "utf8")).toEndWith("- [00:40] ok\n- too late\n");
+  });
+
   test("missing transcript says to run with --transcribe first and never calls hermes", async () => {
     let called = false;
     const result = await generateNotes(base, meta(dir), async () => { called = true; return { exitCode: 0, stdout: "x", stderr: "", timedOut: false }; });
