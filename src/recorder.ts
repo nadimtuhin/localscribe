@@ -42,6 +42,12 @@ export function activeRecording(statePath = stateFilePath(), runner: ProcessRunn
   return state;
 }
 
+// For callers that poll: unlike activeRecording it never kills or clears anything, so one odd read cannot hurt a recording.
+export function readActive(statePath = stateFilePath(), runner: ProcessRunner = realRunner): RecordingState | null {
+  const state = readState(statePath);
+  return state && runner.isRunning(state.pid, state.exe ?? "ffmpeg") ? state : null;
+}
+
 function listDevices(runner: ProcessRunner) {
   const probe = runner.run(["ffmpeg", "-hide_banner", "-f", "avfoundation", "-list_devices", "true", "-i", ""]);
   return { screens: parseScreens(probe.stderr), microphones: parseMicrophones(probe.stderr) };

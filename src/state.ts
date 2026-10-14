@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import type { Selection } from "./capture/selection.ts";
 import type { PluginOptions } from "./plugins/types.ts";
@@ -33,7 +33,10 @@ export function readState(path: string): RecordingState | null {
 
 export function writeState(path: string, state: RecordingState): void {
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, JSON.stringify(state, null, 2));
+  // Rename is atomic, so a concurrent reader sees the old state or the new one, never half of it.
+  const temp = `${path}.${process.pid}.tmp`;
+  writeFileSync(temp, JSON.stringify(state, null, 2));
+  renameSync(temp, path);
 }
 
 export function clearState(path: string): void {

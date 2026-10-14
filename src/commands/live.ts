@@ -2,7 +2,7 @@ import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { createLiveSession } from "../live/session.ts";
 import { renderScreen } from "../live/render.ts";
 import { realHermesRun } from "../notes/generate.ts";
-import { activeRecording } from "../recorder.ts";
+import { activeRecording, readActive } from "../recorder.ts";
 import type { RecordingState } from "../state.ts";
 import type { Command } from "./shared.ts";
 
@@ -47,7 +47,7 @@ async function runRealTui(recording: RecordingState): Promise<void> {
   process.stdin.resume();
   process.stdin.on("data", onData);
   try {
-    while (!quit && activeRecording()) {
+    while (!quit && readActive()) {
       await session.tick();
       draw();
       await Bun.sleep(REFRESH_MS);

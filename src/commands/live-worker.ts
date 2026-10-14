@@ -2,7 +2,7 @@ import { appendFileSync, readdirSync, readFileSync, rmSync, statSync } from "nod
 import { join } from "node:path";
 import { buildSegmentWhisperArgs, runLiveWorker } from "../live/worker.ts";
 import type { Speaker } from "../live/segments.ts";
-import { activeRecording } from "../recorder.ts";
+import { activeRecording, readActive } from "../recorder.ts";
 import { whisperModelPath } from "../transcription/core.ts";
 import type { Command } from "./shared.ts";
 
@@ -40,7 +40,7 @@ export const liveWorkerCommand: Command = async ({ positionals }) => {
     append: (text) => appendFileSync(`${base}.live.txt`, text),
     log: (line) => void console.error(line),
     now: Date.now,
-    recordingActive: () => !interrupted && activeRecording() !== null,
+    recordingActive: () => !interrupted && readActive() !== null,
     sleep: (ms) => Bun.sleep(ms),
   });
   return 0;

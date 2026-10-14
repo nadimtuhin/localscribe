@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
-import { activeRecording, start, stop } from "./recorder.ts";
+import { activeRecording, readActive, start, stop } from "./recorder.ts";
 import { clearState, readState, writeState } from "./state.ts";
 import type { ProcessRunner } from "./runner.ts";
 import type { RecorderPlugin, StoppedContext } from "./plugins/types.ts";
@@ -193,5 +193,45 @@ describe("sidecars", () => {
     });
     expect(activeRecording(statePath, runner)).toBeNull();
     expect(runner.signals).toContain(`SIGINT:${sidePid}`);
+  });
+});
+
+describe("state file", () => {
+  const stateOf = (pid: number, sidecars: { pid: number; exe: string }[] = []) => ({
+    pid, file: join(dir, "d.mp4"), videoFile: join(dir, "d.mp4"), videoHasMic: false, startedAt: new Date().toISOString(), sidecars,
+  });
+
+  test("writeState replaces the file in one step, so a reader never sees a half-written state", () => {
+    const statePath = join(dir, "state.json");
+    writeState(statePath, stateOf(1));
+    const before = statSync(statePath).ino;
+    writeState(statePath, stateOf(2));
+    expect(statSync(statePath).ino).not.toBe(before);
+    expect(readState(statePath)?.pid).toBe(2);
+    expect(readdirSync(dir)).toEqual(["state.json"]);
+  });
+
+  test("readActive reports the live recording without touching anything", () => {
+    const runner = new FakeRunner();
+    const statePath = join(dir, "state.json");
+    const pid = runner.spawnDetached(["ffmpeg", join(dir, "x.mp4")]);
+    writeState(statePath, stateOf(pid));
+    expect(readActive(statePath, runner)?.pid).toBe(pid);
+  });
+
+  test("readActive on a dead recording is null but leaves state and sidecars alone", () => {
+    const runner = new FakeRunner();
+    const statePath = join(dir, "state.json");
+    const sidePid = runner.spawnDetached(["bun"]);
+    writeState(statePath, stateOf(4242, [{ pid: sidePid, exe: "bun" }]));
+    expect(readActive(statePath, runner)).toBeNull();
+    expect(runner.signals).toEqual([]);
+    expect(readState(statePath)).not.toBeNull();
+  });
+
+  test("readActive survives an unreadable state file", () => {
+    const statePath = join(dir, "state.json");
+    writeFileSync(statePath, "{ half");
+    expect(readActive(statePath, new FakeRunner())).toBeNull();
   });
 });
