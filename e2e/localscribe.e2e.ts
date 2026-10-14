@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
-import { BANGLA_CLIP, E2E_ENABLED, HERMES_BIN, MODEL_EN, MODEL_MULTI, missingTools, probe, REPO, Sandbox, say } from "./harness.ts";
+import { BANGLA_CLIP, E2E_ENABLED, HERMES_BIN, MODEL_BANGLA, MODEL_EN, missingTools, probe, REPO, Sandbox, say } from "./harness.ts";
 
 // Opt-in: `bun run e2e` (E2E=1). Records the real screen and plays audio through the speakers.
 const missing = missingTools(["ffmpeg", "ffprobe", "say", "tmux", "whisper-cli"]);
@@ -76,21 +76,15 @@ describe.skipIf(!E2E_ENABLED)("localscribe e2e", () => {
     return s.run(["stop"], 170_000);
   };
 
-  // Known gap: ggml-small answers Bangla audio in Latin transliteration (or wrong-script noise), never Bengali script.
-  // test.failing passes while that is true and goes red when the transcript starts coming out right: then make it a plain t().
-  const bengaliScript = process.env.E2E_BANGLA_STRICT === "1" ? t : (name: string, run: () => Promise<void>, ms: number, ...r: (string | false)[]) => {
-    const reason = [noTools, ...r].find(Boolean);
-    test.skipIf(Boolean(reason)).failing(reason ? `${name} [skipped: ${reason}]` : `${name} [known gap]`, run, ms);
-  };
-  bengaliScript("3. --lang bangla transcript is in Bengali script, small model", async () => {
+  t("3. --lang bangla transcript is in Bengali script, large-v3-turbo model", async () => {
     const s = fresh();
     const stopped = await recordBangla(s, "bn", ["--transcribe"]);
     expect(stopped.code).toBe(0);
     const transcript = s.read(s.base("bn.transcript.md"));
     expect(stampedLines(transcript).length).toBeGreaterThan(0);
-    expect(new Set(s.whisperModels())).toEqual(new Set(["ggml-small.bin"]));
-    expect(transcript, "whisper small tends to answer in Latin transliteration").toMatch(/[ঀ-৿]/);
-  }, 300_000, noModel(MODEL_MULTI), noBanglaClip);
+    expect(new Set(s.whisperModels())).toEqual(new Set(["ggml-large-v3-turbo-q5_0.bin"]));
+    expect(transcript).toMatch(/[ঀ-৿]/);
+  }, 300_000, noModel(MODEL_BANGLA), noBanglaClip);
 
   t("3b. --notes --lang bangla notes are in Bengali script", async () => {
     const s = fresh();
@@ -102,7 +96,7 @@ describe.skipIf(!E2E_ENABLED)("localscribe e2e", () => {
     if (stopped.stdout.includes("hermes timed out")) return console.warn("3b: inconclusive, hermes timed out");
     expect(notes,`stop output:\n${stopped.stdout}\n${stopped.stderr}`).not.toBe("");
     expect(notes).toMatch(/[ঀ-৿]/);
-  }, 300_000, noModel(MODEL_MULTI), noHermes, noBanglaClip);
+  }, 300_000, noModel(MODEL_BANGLA), noHermes, noBanglaClip);
 
   t("4. English --notes (real Hermes) writes the five sections", async () => {
     const s = fresh();

@@ -8,6 +8,7 @@ const REAL_HOME = homedir();
 export const MODELS = join(REAL_HOME, ".hermes/models/whisper");
 export const MODEL_EN = join(MODELS, "ggml-base.en.bin");
 export const MODEL_MULTI = join(MODELS, "ggml-small.bin");
+export const MODEL_BANGLA = join(MODELS, "ggml-large-v3-turbo-q5_0.bin");
 export const BANGLA_CLIP = join(import.meta.dir, "fixtures/bn.wav");
 export const HERMES_BIN = join(REAL_HOME, ".local/bin/hermes");
 

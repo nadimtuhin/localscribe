@@ -51,8 +51,12 @@ describe("whisperModelPath", () => {
     expect(whisperModelPath({}, "en")).toBe(`${models}/ggml-base.en.bin`);
   });
 
+  test("bangla uses large-v3-turbo, since small writes Bangla in the wrong script", () => {
+    expect(whisperModelPath({}, "bn")).toBe(`${models}/ggml-large-v3-turbo-q5_0.bin`);
+  });
+
   test("any other language, and auto, use the multilingual small model", () => {
-    for (const lang of ["hi", "bn", "auto"]) expect(whisperModelPath({}, lang)).toBe(`${models}/ggml-small.bin`);
+    for (const lang of ["hi", "auto"]) expect(whisperModelPath({}, lang)).toBe(`${models}/ggml-small.bin`);
   });
 
   test("LOCALSCRIBE_WHISPER_MODEL overrides the choice", () => {

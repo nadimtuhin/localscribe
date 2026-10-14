@@ -40,9 +40,11 @@ export class WhisperModelError extends Error {
   }
 }
 
-// English has its own smaller, faster model; every other language (and auto-detect) needs the multilingual one.
+// English has its own smaller, faster model; every other language (and auto-detect) needs a multilingual one.
+// small writes Bangla in Latin or Devanagari letters, so Bangla gets large-v3-turbo.
+const MODEL_FOR_LANGUAGE: Record<string, string> = { en: "ggml-base.en.bin", bn: "ggml-large-v3-turbo-q5_0.bin" };
 export const whisperModelPath = (env: Record<string, string | undefined>, lang: string = DEFAULT_LANGUAGE) =>
-  env.LOCALSCRIBE_WHISPER_MODEL ?? join(MODELS_DIR, lang === "en" ? "ggml-base.en.bin" : "ggml-small.bin");
+  env.LOCALSCRIBE_WHISPER_MODEL ?? join(MODELS_DIR, MODEL_FOR_LANGUAGE[lang] ?? "ggml-small.bin");
 
 export function requireWhisperModel(env: Record<string, string | undefined>, lang: string, exists: (path: string) => boolean = existsSync): string {
   const model = whisperModelPath(env, lang);
