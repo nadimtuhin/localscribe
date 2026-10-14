@@ -152,4 +152,13 @@ describe("runLiveWorker", () => {
     expect(logged.join("\n")).toContain("ENOENT");
     expect(h.appended.join("")).toBe("[00:00] me: survived\n");
   });
+
+  test("a failure that is not an Error is logged as plain text", async () => {
+    const h = harness({ speakers: ["me"], texts: {}, ticks: [{ at: 7_000, active: false }] });
+    h.deps.listDir = () => { throw "disk gone"; };
+    const logged: string[] = [];
+    h.deps.log = (line) => void logged.push(line);
+    await runLiveWorker(h.deps);
+    expect(logged).toEqual(["live-worker: disk gone"]);
+  });
 });

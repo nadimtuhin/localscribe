@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import type { HermesResult, HermesRun } from "../notes/generate.ts";
-import { createLiveSession } from "./session.ts";
+import { createLiveSession, type LiveSessionDeps } from "./session.ts";
 
 const START = 1_000_000;
 
-function setup(run: HermesRun) {
+function setup(run: HermesRun, overrides: Partial<LiveSessionDeps> = {}) {
   const clock = { now: START };
   const files = { live: "", manual: "", suggestions: "" };
   const prompts: string[] = [];
@@ -15,6 +15,7 @@ function setup(run: HermesRun) {
     readManual: () => files.manual,
     appendManual: (text) => void (files.manual += text),
     appendSuggestions: (text) => void (files.suggestions += text),
+    ...overrides,
     run: async (args, cwd, timeout) => {
       prompts.push(args.at(-1)!);
       return run(args, cwd, timeout);
@@ -95,6 +96,49 @@ describe("live session", () => {
     await session.tick();
     await expect(session.pending).resolves.toBeUndefined();
     expect(session.state.status).toContain("hermes not found");
+  });
+
+  test("a prompt that cannot be built shows the reason and is retried 15s later", async () => {
+    let manualReadable = false;
+    const { clock, files, prompts, session } = setup(ok("- Ask"), {
+      readManual: () => {
+        if (!manualReadable) throw new Error("notes unreadable");
+        return "";
+      },
+    });
+    files.live = minute(1) + minute(2);
+    await session.tick();
+    await session.pending;
+    expect(session.state.status).toBe("suggestions: notes unreadable");
+    manualReadable = true;
+    clock.now += 14_000;
+    await session.tick();
+    await session.pending;
+    expect(prompts).toEqual([]);
+    clock.now += 1_000;
+    await session.tick();
+    await session.pending;
+    expect(prompts).toHaveLength(1);
+  });
+
+  test("a failure that is not an Error is shown as plain text", async () => {
+    const { files, session } = setup(ok("- Ask"), {
+      appendSuggestions: () => { throw "quota exceeded"; },
+    });
+    files.live = minute(1) + minute(2);
+    await session.tick();
+    await session.pending;
+    expect(session.state.status).toBe("suggestions: quota exceeded");
+  });
+
+  test("a question whose answer cannot be saved shows the reason under ask", async () => {
+    const { session } = setup(ok("an answer"), {
+      appendSuggestions: () => { throw new Error("read-only folder"); },
+    });
+    for (const ch of "?what is dns") session.key(ch);
+    session.key("\r");
+    await session.pending;
+    expect(session.state.status).toBe("ask: read-only folder");
   });
 
   test("typed note is stamped with the recording clock, stored, and shown", () => {

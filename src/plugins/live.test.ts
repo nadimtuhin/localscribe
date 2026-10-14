@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { ProcessRunner } from "../runner.ts";
 import { runStartHooks } from "./index.ts";
-import { createLivePlugin } from "./live.ts";
+import { createLivePlugin, liveWorkerCommand } from "./live.ts";
 import type { PluginOptions, StartedContext } from "./types.ts";
 
 let dir: string;
@@ -112,5 +112,14 @@ describe("live plugin", () => {
     await runStartHooks([noModel.plugin], context({ liveCaptions: true }, 0, [], modelLines));
     expect(modelLines.join("\n")).toContain(`live: whisper model not found: ${model}`);
     expect(noModel.spawned).toEqual([]);
+  });
+});
+
+describe("liveWorkerCommand", () => {
+  test("re-runs this CLI with the live-worker subcommand, the recording base and the speakers", () => {
+    const command = liveWorkerCommand("/r/demo", "me,them");
+    expect(command[0]).toBe(process.execPath);
+    expect(command[1]).toMatch(/src\/cli\.ts$/);
+    expect(command.slice(2)).toEqual(["live-worker", "/r/demo", "me,them"]);
   });
 });

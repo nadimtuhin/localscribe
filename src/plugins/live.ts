@@ -12,15 +12,17 @@ const CLI_PATH = join(import.meta.dir, "..", "cli.ts");
 export interface LiveDeps {
   runner: ProcessRunner;
   env: Record<string, string | undefined>;
-  ensureHelper: () => string;
+  ensureHelper: (runner: ProcessRunner) => string;
   workerCommand: (base: string, speakers: string) => string[];
 }
+
+export const liveWorkerCommand = (base: string, speakers: string): string[] => [process.execPath, CLI_PATH, "live-worker", base, speakers];
 
 const realDeps = (): LiveDeps => ({
   runner: realRunner,
   env: process.env,
-  ensureHelper: () => ensureLiveHelper(realRunner),
-  workerCommand: (base, speakers) => [process.execPath, CLI_PATH, "live-worker", base, speakers],
+  ensureHelper: ensureLiveHelper,
+  workerCommand: liveWorkerCommand,
 });
 
 // Two-sided realtime transcript: segmenters write wavs, the worker transcribes them into <base>.live.txt.
@@ -46,7 +48,7 @@ export function createLivePlugin(deps: LiveDeps = realDeps()): RecorderPlugin {
       }
       if (ctx.options.systemAudio !== false) {
         speakers.push("them");
-        const helper = ensureHelper();
+        const helper = ensureHelper(runner);
         ctx.addSidecar(runner.spawnDetached([helper, segmentDir, String(SEGMENT_SECONDS), ...(ctx.recorderPid === undefined ? [] : ["--parent-pid", String(ctx.recorderPid)])], `${ctx.base}.live.system.log`), "livesys");
       }
       ctx.addSidecar(runner.spawnDetached(workerCommand(ctx.base, speakers.join(",")), `${ctx.base}.live.worker.log`), "bun", { drain: true });

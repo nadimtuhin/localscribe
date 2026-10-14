@@ -54,13 +54,15 @@ export async function runLiveWorker(deps: WorkerDeps): Promise<void> {
     }
   };
 
-  for (;;) {
-    const active = deps.recordingActive();
+  let active: boolean;
+  do {
+    active = deps.recordingActive();
+    const flushing = !active;
     await attempt(async () => {
-      await drain(!active);
-      if (active) emit(merger.release(deps.now() - deps.startedAtMs));
+      await drain(flushing);
+      if (!flushing) emit(merger.release(deps.now() - deps.startedAtMs));
     });
-    if (!active) return void (await attempt(() => emit(merger.flush())));
-    await deps.sleep(POLL_MS);
-  }
+    if (active) await deps.sleep(POLL_MS);
+  } while (active);
+  await attempt(() => emit(merger.flush()));
 }
