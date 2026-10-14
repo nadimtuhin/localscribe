@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
-import { buildMicArgs, buildSckMuxArgs, withToolPaths } from "./ffmpeg.ts";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { buildMicArgs, buildSckMuxArgs, ensureToolPath, withToolPaths } from "./ffmpeg.ts";
 
 describe("buildMicArgs", () => {
   const args = buildMicArgs({ micDevice: 2, file: "/r/a.mic.m4a" });
@@ -39,5 +39,17 @@ describe("withToolPaths", () => {
   });
   test("handles an unset PATH", () => {
     expect(withToolPaths(undefined)).toBe("/opt/homebrew/bin:/usr/local/bin");
+  });
+});
+
+describe("ensureToolPath", () => {
+  let original: string | undefined;
+  beforeEach(() => { original = process.env.PATH; });
+  afterEach(() => { process.env.PATH = original; });
+
+  test("adds the Homebrew dirs to this process's PATH", () => {
+    process.env.PATH = "/usr/bin:/bin";
+    ensureToolPath();
+    expect(process.env.PATH).toBe("/usr/bin:/bin:/opt/homebrew/bin:/usr/local/bin");
   });
 });

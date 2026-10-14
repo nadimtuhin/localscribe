@@ -1,4 +1,9 @@
-export class LanguageError extends Error {}
+export class LanguageError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "LanguageError";
+  }
+}
 
 export type LanguageCode = string; // a whisper language code, or "auto"
 

@@ -16,7 +16,12 @@ const SYSAUDIO = { source: join(PROJECT_ROOT, "native", "sysaudio.swift"), binar
 export const CAPTURE = { source: join(PROJECT_ROOT, "native", "capture.swift"), binary: join(PROJECT_ROOT, "bin", "localscribe-capture") };
 export const ANNOTATE = { source: join(PROJECT_ROOT, "native", "annotate.swift"), binary: join(PROJECT_ROOT, "bin", "localscribe-annotate") };
 
-export class RecorderError extends Error {}
+export class RecorderError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RecorderError";
+  }
+}
 
 // Everything start/stop touch outside their own logic; tests replace these.
 export interface RecorderDeps {

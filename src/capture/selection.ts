@@ -1,6 +1,11 @@
 // Pure logic for choosing what to record: parsing flags, resolving names to ids, building helper args.
 
-export class SelectionError extends Error {}
+export class SelectionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "SelectionError";
+  }
+}
 
 export interface Display { id: number; name: string; width: number; height: number; scale: number } // width/height in points
 export interface WindowInfo { id: number; app: string; title: string } // listed front to back

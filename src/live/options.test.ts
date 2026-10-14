@@ -1,4 +1,7 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { cliOptions } from "../commands/shared.ts";
 import { pluginOptionsFromFlags } from "../plugins/index.ts";
@@ -57,5 +60,25 @@ describe("pluginOptionsFromFlags with live modes", () => {
 
   test("without the new flags the options are unchanged", () => {
     expect(pluginOptionsFromFlags({ live: true })).toEqual({ transcribe: true, liveCaptions: true, notes: true, systemAudio: true, draw: false, lang: "en", role: "meeting", contextFiles: [] });
+  });
+});
+
+describe("liveOptionsFromFlags against the real filesystem", () => {
+  let dir: string;
+  beforeEach(() => { dir = mkdtempSync(join(tmpdir(), "localscribe-options-")); });
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+  test("an existing file is accepted and resolved against the given directory", () => {
+    writeFileSync(join(dir, "resume.md"), "x");
+    expect(liveOptionsFromFlags({ context: ["resume.md"] }, undefined, dir).contextFiles).toEqual([join(dir, "resume.md")]);
+  });
+
+  test("a path that does not exist is rejected", () => {
+    expect(() => liveOptionsFromFlags({ context: ["gone.md"] }, undefined, dir)).toThrow(`context file not found: ${join(dir, "gone.md")}`);
+  });
+
+  test("a directory is not a context file", () => {
+    mkdirSync(join(dir, "folder"));
+    expect(() => liveOptionsFromFlags({ context: ["folder"] }, undefined, dir)).toThrow(LiveOptionsError);
   });
 });

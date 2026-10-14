@@ -2,7 +2,12 @@ import { statSync } from "node:fs";
 import { resolve } from "node:path";
 import { ROLES, type Role } from "./prompt.ts";
 
-export class LiveOptionsError extends Error {}
+export class LiveOptionsError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "LiveOptionsError";
+  }
+}
 
 export interface LiveFlags { role?: string; context?: string[] }
 export interface LiveOptions { role: Role; contextFiles: string[] }

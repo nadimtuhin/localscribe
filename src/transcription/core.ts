@@ -33,7 +33,12 @@ export const buildWhisperArgs = ({ model, wav, prefix, lang }: { model: string; 
 const MODELS_DIR = join(homedir(), ".hermes/models/whisper");
 const MODEL_URL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main";
 
-export class WhisperModelError extends Error {}
+export class WhisperModelError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "WhisperModelError";
+  }
+}
 
 // English has its own smaller, faster model; every other language (and auto-detect) needs the multilingual one.
 export const whisperModelPath = (env: Record<string, string | undefined>, lang: string = DEFAULT_LANGUAGE) =>
