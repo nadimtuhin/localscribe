@@ -2,6 +2,8 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import type { PluginOptions } from "./plugins/types.ts";
 
+export interface Sidecar { pid: number; exe: string }
+
 export interface RecordingState {
   pid: number; // ffmpeg (screen + mic)
   file: string; // final output path
@@ -11,6 +13,7 @@ export interface RecordingState {
   startedAt: string;
   pluginOptions?: PluginOptions; // flags from `start`, so a separate `stop` process knows what ran
   plugins?: Record<string, unknown>; // each plugin's start() result, keyed by plugin name
+  sidecars?: Sidecar[]; // detached processes plugins registered via addSidecar
 }
 
 export function readState(path: string): RecordingState | null {

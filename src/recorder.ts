@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from
 import { dirname, join, resolve } from "node:path";
 import { buildArgs, buildMuxArgs, parseMicrophones, parseScreens } from "./ffmpeg.ts";
 import { defaultRecordingsDir, stateFilePath, timestampedFilename, withMp4Extension } from "./paths.ts";
-import { clearState, readState, writeState, type RecordingState } from "./state.ts";
+import { clearState, readState, writeState, type RecordingState, type Sidecar } from "./state.ts";
 import { plugins as defaultPlugins, runStartHooks, runStopHooks } from "./plugins/index.ts";
 import type { PluginOptions, RecorderPlugin } from "./plugins/types.ts";
 import { realRunner, type ProcessRunner } from "./runner.ts";
@@ -32,6 +32,7 @@ export function activeRecording(statePath = stateFilePath(), runner: ProcessRunn
   const state = readState(statePath);
   if (state && !runner.isRunning(state.pid, "ffmpeg")) {
     if (state.systemAudio && runner.isRunning(state.systemAudio.pid, "sysaudio")) runner.kill(state.systemAudio.pid, "SIGINT");
+    for (const { pid, exe } of state.sidecars ?? []) if (runner.isRunning(pid, exe)) runner.kill(pid, "SIGINT");
     clearState(statePath);
     return null;
   }
@@ -126,24 +127,38 @@ export async function start(opts: StartOptions = {}, injected: Partial<RecorderD
     );
   }
 
-  const pluginStates = await runStartHooks(plugins, { base: partsBase, options: pluginOptions, micDevice, log: printLine });
+  const sidecars: Sidecar[] = [];
+  const addSidecar = (pid: number, exe: string) => {
+    sidecars.push({ pid, exe });
+    const latest = readState(statePath);
+    if (latest) writeState(statePath, { ...latest, sidecars });
+  };
+  const pluginStates = await runStartHooks(plugins, { base: partsBase, options: pluginOptions, micDevice, log: printLine, addSidecar });
   // A `stop` during slow plugin startup clears the state; don't resurrect it.
   const current = readState(statePath);
-  if (!current) throw new RecorderError("recording was stopped while plugins were starting");
-  const withPlugins: RecordingState = { ...current, plugins: pluginStates };
+  if (!current) {
+    await interruptSidecars(runner, sidecars);
+    throw new RecorderError("recording was stopped while plugins were starting");
+  }
+  const withPlugins: RecordingState = { ...current, plugins: pluginStates, sidecars };
   writeState(statePath, withPlugins);
   return withPlugins;
 }
 
-async function interrupt(runner: ProcessRunner, pid: number): Promise<{ forced: boolean }> {
-  if (!runner.isAlive(pid)) return { forced: false };
+// With an executable name the pid is verified first, so a reused pid is never signalled.
+async function interrupt(runner: ProcessRunner, pid: number, exe?: string): Promise<{ forced: boolean }> {
+  const alive = () => (exe === undefined ? runner.isAlive(pid) : runner.isRunning(pid, exe));
+  if (!alive()) return { forced: false };
   runner.kill(pid, "SIGINT");
   const deadline = Date.now() + STOP_TIMEOUT_MS;
-  while (runner.isAlive(pid) && Date.now() < deadline) await runner.sleep(100);
-  const forced = runner.isAlive(pid);
+  while (alive() && Date.now() < deadline) await runner.sleep(100);
+  const forced = alive();
   if (forced) runner.kill(pid, "SIGKILL");
   return { forced };
 }
+
+const interruptSidecars = (runner: ProcessRunner, sidecars: Sidecar[]) =>
+  Promise.all(sidecars.map(({ pid, exe }) => interrupt(runner, pid, exe)));
 
 export interface StopResult {
   file: string;
@@ -159,7 +174,11 @@ export async function stop(injected: Partial<RecorderDeps> = {}): Promise<StopRe
   const state = activeRecording(statePath, runner);
   if (!state) throw new RecorderError("not recording");
 
-  const [video, audio] = await Promise.all([interrupt(runner, state.pid), state.systemAudio ? interrupt(runner, state.systemAudio.pid) : { forced: false }]);
+  const [video, audio] = await Promise.all([
+    interrupt(runner, state.pid),
+    state.systemAudio ? interrupt(runner, state.systemAudio.pid) : { forced: false },
+    interruptSidecars(runner, state.sidecars ?? []),
+  ]);
   clearState(statePath);
   const durationMs = Date.now() - Date.parse(state.startedAt);
   const forced = video.forced || audio.forced;

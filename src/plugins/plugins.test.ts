@@ -17,7 +17,7 @@ function recordingPlugin(name: string, calls: string[], overrides: Partial<Recor
   };
 }
 
-const baseContext = (lines: string[] = []) => ({ base: "/r/demo", options: {} as PluginOptions, log: (line: string) => lines.push(line) });
+const baseContext = (lines: string[] = []) => ({ base: "/r/demo", options: {} as PluginOptions, log: (line: string) => lines.push(line), addSidecar: () => {} });
 
 describe("runStartHooks", () => {
   test("returns each enabled plugin's start result keyed by name", async () => {

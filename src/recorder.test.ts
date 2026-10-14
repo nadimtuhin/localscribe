@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
-import { start, stop } from "./recorder.ts";
-import { clearState, readState } from "./state.ts";
+import { activeRecording, start, stop } from "./recorder.ts";
+import { clearState, readState, writeState } from "./state.ts";
 import type { ProcessRunner } from "./runner.ts";
 import type { RecorderPlugin, StoppedContext } from "./plugins/types.ts";
 
@@ -92,5 +92,89 @@ describe("stop context", () => {
     const result = await stop(deps(runner, [plugin]));
     expect(stopped[0]!.startedAt).toBe(state.startedAt);
     expect(stopped[0]!.durationMs).toBe(result.durationMs);
+  });
+});
+
+describe("sidecars", () => {
+  const sidecarPlugin = (runner: FakeRunner): RecorderPlugin => ({
+    name: "side",
+    enabled: () => true,
+    start: async (ctx) => {
+      const pid = runner.spawnDetached(["whisper-stream"]);
+      ctx.addSidecar(pid, "whisper-stream");
+      return { pid };
+    },
+  });
+
+  test("start records sidecars in state", async () => {
+    const runner = new FakeRunner();
+    const state = await start(startOptions(), deps(runner, [sidecarPlugin(runner)]));
+    expect(state.sidecars).toEqual([{ pid: 1001, exe: "whisper-stream" }]);
+  });
+
+  test("stop interrupts sidecars before stop hooks run", async () => {
+    const runner = new FakeRunner();
+    let sidecarAliveInHook: boolean | undefined;
+    const plugin: RecorderPlugin = { ...sidecarPlugin(runner), stop: async () => { sidecarAliveInHook = runner.isAlive(1001); } };
+    await start(startOptions(), deps(runner, [plugin]));
+    await stop(deps(runner, [plugin]));
+    expect(runner.signals).toContain("SIGINT:1001");
+    expect(sidecarAliveInHook).toBe(false);
+  });
+
+  test("stop kills sidecars even when mixing fails", async () => {
+    const runner = new FakeRunner();
+    runner.run = (command: string[]) =>
+      command.includes("-list_devices") ? { exitCode: 0, stdout: "", stderr: DEVICES } : { exitCode: 1, stdout: "", stderr: "mux broke" };
+    // Starting with system audio would compile the swift helper, so seed the state directly.
+    const statePath = join(dir, "state.json");
+    writeFileSync(join(dir, "demo.video.mp4"), "v");
+    writeFileSync(join(dir, "demo.system.m4a"), "a");
+    const ffmpegPid = runner.spawnDetached(["ffmpeg", join(dir, "x.mp4")]);
+    const sysPid = runner.spawnDetached(["sysaudio"]);
+    const sidePid = runner.spawnDetached(["whisper-stream"]);
+    writeState(statePath, {
+      pid: ffmpegPid, file: join(dir, "demo.mp4"), videoFile: join(dir, "demo.video.mp4"), videoHasMic: false,
+      systemAudio: { pid: sysPid, file: join(dir, "demo.system.m4a") }, startedAt: new Date().toISOString(),
+      sidecars: [{ pid: sidePid, exe: "whisper-stream" }],
+    });
+    const result = await stop(deps(runner, []));
+    expect(result.mixError).toBe("mux broke");
+    expect(runner.signals).toContain(`SIGINT:${sidePid}`);
+    expect(runner.isAlive(sidePid)).toBe(false);
+  });
+
+  test("sidecars started before a concurrent stop are interrupted, not leaked", async () => {
+    const runner = new FakeRunner();
+    const plugin: RecorderPlugin = {
+      ...sidecarPlugin(runner),
+      start: async (ctx) => {
+        ctx.addSidecar(runner.spawnDetached(["whisper-stream"]), "whisper-stream");
+        clearState(join(dir, "state.json"));
+        return null;
+      },
+    };
+    await expect(start(startOptions(), deps(runner, [plugin]))).rejects.toThrow("stopped while plugins were starting");
+    expect(runner.signals).toContain("SIGINT:1001");
+  });
+
+  test("a sidecar whose pid now belongs to another program is left alone", async () => {
+    const runner = new FakeRunner();
+    await start(startOptions(), deps(runner, [sidecarPlugin(runner)]));
+    runner.alive.set(1001, "unrelated");
+    await stop(deps(runner, [sidecarPlugin(runner)]));
+    expect(runner.signals).not.toContain("SIGINT:1001");
+  });
+
+  test("stale cleanup interrupts sidecars of a dead recording", () => {
+    const runner = new FakeRunner();
+    const statePath = join(dir, "state.json");
+    const sidePid = runner.spawnDetached(["whisper-stream"]);
+    writeState(statePath, {
+      pid: 4242, file: join(dir, "d.mp4"), videoFile: join(dir, "d.mp4"), videoHasMic: false,
+      startedAt: new Date().toISOString(), sidecars: [{ pid: sidePid, exe: "whisper-stream" }],
+    });
+    expect(activeRecording(statePath, runner)).toBeNull();
+    expect(runner.signals).toContain(`SIGINT:${sidePid}`);
   });
 });
