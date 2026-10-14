@@ -18,3 +18,4 @@
 - ScreenCaptureKit window capture of minimized/off-screen windows yields black frames; document it.
 - The GUI app needs its own Screen Recording permission (different bundle than the terminal).
 - Two Swift build targets increase setup; the CLI auto-builds the helper as today, and the GUI is built with `swift build -c release` on demand.
+7. **Engine choice (implemented).** A selection (`--window/--area/--display`) implies `sck`; no selection keeps `ffmpeg` until the clap-test parity smoke (task 1.3) passes. `--window pick` / `--area pick` run the helper overlay. The mic is a separate ffmpeg with no host-clock anchor, so expect a mic-vs-video offset of up to about a second; the helper starts first to keep it small. `ensureToolPath()` appends Homebrew dirs to PATH so a Finder-launched GUI still finds ffmpeg.
