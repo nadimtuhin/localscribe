@@ -5,6 +5,7 @@ export interface PluginOptions {
   liveCaptions?: boolean; // --live
   notes?: boolean; // --notes
   systemAudio?: boolean; // false with --no-system-audio; unset means on
+  draw?: boolean; // --draw
 }
 
 export interface PluginContext {

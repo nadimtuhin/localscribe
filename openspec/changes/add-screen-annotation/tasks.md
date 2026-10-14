@@ -1,8 +1,8 @@
 ## 1. Plugin (TDD)
 
-- [ ] 1.1 `--draw` flag -> `PluginOptions.draw`; help text
-- [ ] 1.2 `annotation` plugin: enabled, start spawns helper with `--parent-pid`, registers sidecar; registry order
-- [ ] 1.3 Live TUI header mentions Ctrl+Opt+D
+- [x] 1.1 `--draw` flag -> `PluginOptions.draw`; help text
+- [x] 1.2 `annotation` plugin: enabled, start spawns helper with `--parent-pid`, registers sidecar; registry order
+- [x] 1.3 Live TUI header mentions Ctrl+Opt+D
 
 ## 2. Helper
 
