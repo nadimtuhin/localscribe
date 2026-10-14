@@ -5,6 +5,8 @@ export interface PluginOptions {
   liveCaptions?: boolean; // --live
   notes?: boolean; // --notes
   systemAudio?: boolean; // false with --no-system-audio; unset means on
+  role?: "candidate" | "interviewer" | "meeting"; // --role, set with --live
+  contextFiles?: string[]; // --context paths, absolute, set with --live
 }
 
 export interface PluginContext {
