@@ -6,9 +6,9 @@
 
 ## 2. Helper
 
-- [ ] 2.1 `native/annotate.swift` overlay, hotkeys, tools, `--parent-pid`, `--demo-stroke`
-- [ ] 2.2 `src/annotate/helper.ts` build on demand to `bin/localscribe-annotate`
+- [x] 2.1 `native/annotate.swift` overlay, hotkeys, tools, `--parent-pid`, `--demo-stroke`
+- [x] 2.2 build on demand (shared `ensureHelper`, `ANNOTATE` in recorder.ts) to `bin/localscribe-annotate`
 
 ## 3. Verification
 
-- [ ] 3.1 Real 8 s recording with `--draw` + demo stroke; red line visible in extracted frame; no helper left after stop
+- [x] 3.1 Real 8 s recording with `--draw` + demo stroke; red line visible in extracted frame; no helper left after stop

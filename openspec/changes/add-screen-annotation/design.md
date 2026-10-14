@@ -21,7 +21,7 @@ Carbon `RegisterEventHotKey` (Ctrl+Opt+D, Ctrl+Opt+C), delivered through the app
 
 ## Debug
 
-`--demo-stroke` draws a fixed diagonal red line at launch, for smoke tests where no human can drag. Not exposed via `localscribe start`.
+`--demo-stroke` (or env `LOCALSCRIBE_DEMO_STROKE`, since the plugin spawns the helper) draws a fixed diagonal red line at launch, for smoke tests where no human can drag. Not a `localscribe start` flag.
 
 ## Non-goals
 

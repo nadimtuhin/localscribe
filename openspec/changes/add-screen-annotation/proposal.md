@@ -17,6 +17,6 @@ When demoing or explaining something on screen, the user wants to draw on it (ci
 
 ## Impact
 
-- New: `native/annotate.swift`, `src/plugins/annotation.ts`, `src/annotate/helper.ts` (build on demand).
+- New: `native/annotate.swift`, `src/plugins/annotation.ts`, `ANNOTATE` helper entry in `src/recorder.ts` (build on demand).
 - Touched: `PluginOptions.draw`, `pluginOptionsFromFlags`, plugin registry (one line), CLI flag table and help, live TUI header text.
 - The helper runs as a sidecar and exits on SIGINT/SIGTERM or when the recorder process is gone.
