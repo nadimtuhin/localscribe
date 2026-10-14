@@ -62,3 +62,43 @@ export const parseScreens = (listOutput: string): Device[] =>
   parseDevices(splitDeviceList(listOutput).video).filter((d) => d.name.startsWith("Capture screen"));
 
 export const parseMicrophones = (listOutput: string): Device[] => parseDevices(splitDeviceList(listOutput).audio);
+
+export interface MicOptions { micDevice: number; file: string }
+
+// SCK engine: ffmpeg only records the microphone; video and system audio come from the capture helper.
+export const buildMicArgs = ({ micDevice, file }: MicOptions): string[] => [
+  "-hide_banner", "-loglevel", "error", "-y",
+  "-f", "avfoundation", "-i", `none:${micDevice}`,
+  "-c:a", "aac", "-b:a", "160k",
+  file,
+];
+
+export interface SckMuxOptions {
+  video: string; // video-only part from the capture helper
+  audio: string[]; // system and/or mic parts that exist and are non-empty (1 or 2)
+  out: string;
+}
+
+export function buildSckMuxArgs({ video, audio, out }: SckMuxOptions): string[] {
+  const inputs = ["-hide_banner", "-loglevel", "error", "-y", "-i", video, ...audio.flatMap((path) => ["-i", path])];
+  if (audio.length === 1) return [...inputs, "-map", "0:v", "-map", "1:a", "-c", "copy", out];
+  return [
+    ...inputs,
+    "-filter_complex", "[1:a][2:a]amix=inputs=2:duration=longest:normalize=0[mixed]",
+    "-map", "0:v", "-map", "[mixed]",
+    "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
+    out,
+  ];
+}
+
+const TOOL_DIRS = ["/opt/homebrew/bin", "/usr/local/bin"];
+
+// A GUI launched from Finder gets a minimal PATH without Homebrew, so ffmpeg would not be found.
+export function withToolPaths(path: string | undefined): string {
+  const present = (path ?? "").split(":").filter(Boolean);
+  return [...present, ...TOOL_DIRS.filter((dir) => !present.includes(dir))].join(":");
+}
+
+export const ensureToolPath = () => {
+  process.env.PATH = withToolPaths(process.env.PATH);
+};

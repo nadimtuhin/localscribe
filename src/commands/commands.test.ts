@@ -21,11 +21,6 @@ describe("runCli", () => {
     expect(out.join("\n")).toContain("localscribe start");
   });
 
-  test.each(["devices"])("%s is a stub that exits 1 with 'not implemented'", async (command) => {
-    expect(await runCli([command, "file.md"])).toBe(1);
-    expect(err.join("\n")).toContain("not implemented");
-  });
-
   test("list runs against the recordings dir without throwing", async () => {
     expect(await runCli(["list"])).toBe(0);
   });

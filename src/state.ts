@@ -1,15 +1,21 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import type { Selection } from "./capture/selection.ts";
 import type { PluginOptions } from "./plugins/types.ts";
 
 export interface Sidecar { pid: number; exe: string }
 
 export interface RecordingState {
-  pid: number; // ffmpeg (screen + mic)
+  pid: number; // ffmpeg (screen + mic), or the capture helper when engine is "sck"
+  exe?: string; // executable name of `pid`; "ffmpeg" when absent
+  engine?: "sck" | "ffmpeg"; // "ffmpeg" when absent
+  selection?: Selection; // what was chosen with --window/--area/--display (sck engine)
   file: string; // final output path
-  videoFile: string; // ffmpeg's output; equals `file` when there is nothing to mix
+  videoFile: string; // video part; equals `file` when there is nothing to mix
   videoHasMic: boolean;
-  systemAudio?: { pid: number; file: string };
+  systemAudio?: { pid: number; file: string }; // ffmpeg engine: separate sysaudio process
+  systemAudioFile?: string; // sck engine: written by the capture helper itself
+  mic?: { pid: number; file: string }; // sck engine: audio-only ffmpeg
   startedAt: string;
   pluginOptions?: PluginOptions; // flags from `start`, so a separate `stop` process knows what ran
   plugins?: Record<string, unknown>; // each plugin's start() result, keyed by plugin name
