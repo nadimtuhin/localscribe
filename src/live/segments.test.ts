@@ -13,9 +13,9 @@ describe("parseSegmentName", () => {
 });
 
 describe("readySegments", () => {
-  test("a segment is ready only once a later one of the same speaker exists", () => {
+  test("a mic segment is ready only once a later one exists; system segments are atomic so ready at once", () => {
     const names = ["me_00001.wav", "me_00002.wav", "them_00001.wav"];
-    expect(readySegments(names, new Set(), false)).toEqual(["me_00001.wav"]);
+    expect(readySegments(names, new Set(), false)).toEqual(["me_00001.wav", "them_00001.wav"]);
   });
   test("never returns a segment twice", () => {
     const names = ["me_00001.wav", "me_00002.wav"];
@@ -27,7 +27,7 @@ describe("readySegments", () => {
   });
   test("is ordered by sequence, then speaker", () => {
     const names = ["them_00002.wav", "me_00002.wav", "them_00001.wav", "me_00001.wav", "me_00003.wav", "them_00003.wav"];
-    expect(readySegments(names, new Set(), false)).toEqual(["me_00001.wav", "them_00001.wav", "me_00002.wav", "them_00002.wav"]);
+    expect(readySegments(names, new Set(), false)).toEqual(["me_00001.wav", "them_00001.wav", "me_00002.wav", "them_00002.wav", "them_00003.wav"]);
   });
 });
 

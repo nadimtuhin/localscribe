@@ -15,7 +15,8 @@ export function parseSegmentName(name: string): { who: Speaker; seq: number } | 
   return match ? { who: match[1] as Speaker, seq: Number(match[2]) } : null;
 }
 
-// A segment is closed once a later one of the same speaker exists; `flush` also releases the open ones.
+// A mic segment (written in place by ffmpeg) is closed once a later one exists. System segments are
+// renamed into place whole, so they are ready as soon as they appear. `flush` also releases the open mic one.
 export function readySegments(names: string[], done: Set<string>, flush: boolean): string[] {
   const parsed = names.flatMap((name) => {
     const segment = parseSegmentName(name);
@@ -24,7 +25,7 @@ export function readySegments(names: string[], done: Set<string>, flush: boolean
   const lastSeq = (who: Speaker) => Math.max(-1, ...parsed.filter((s) => s.who === who).map((s) => s.seq));
   const last = { me: lastSeq("me"), them: lastSeq("them") };
   return parsed
-    .filter((s) => !done.has(s.name) && (flush || s.seq < last[s.who]))
+    .filter((s) => !done.has(s.name) && (flush || s.who === "them" || s.seq < last[s.who]))
     .sort((a, b) => a.seq - b.seq || SPEAKER_ORDER[a.who] - SPEAKER_ORDER[b.who])
     .map((s) => s.name);
 }

@@ -58,7 +58,7 @@ describe("runLiveWorker", () => {
     });
     await runLiveWorker(h.deps);
     expect(h.appended.join("")).toBe(
-      "[00:00] me: Hi, tell me about yourself.\n[00:00] them: Sure, I am an engineer.\n[00:01] me: second\n[00:01] them: later\n",
+      "[00:00] me: Hi, tell me about yourself.\n[00:00] them: Sure, I am an engineer.\n[00:01] them: later\n[00:01] me: second\n",
     );
     expect(h.transcribed.filter((n) => n === "me_00001.wav")).toHaveLength(1);
   });
