@@ -2,6 +2,8 @@ import { parseArgs } from "node:util";
 import { captionsCommand } from "./captions.ts";
 import { devicesCommand } from "./devices.ts";
 import { listCommand } from "./list.ts";
+import { liveCommand } from "./live.ts";
+import { liveWorkerCommand } from "./live-worker.ts";
 import { notesCommand } from "./notes.ts";
 import { cliOptions, HELP, type Command } from "./shared.ts";
 import { startCommand } from "./start.ts";
@@ -16,6 +18,8 @@ const commands: Record<string, Command> = {
   devices: devicesCommand,
   captions: captionsCommand,
   notes: notesCommand,
+  live: liveCommand,
+  "live-worker": liveWorkerCommand,
 };
 
 export async function runCli(argv: string[]): Promise<number> {

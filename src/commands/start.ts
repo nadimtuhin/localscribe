@@ -24,6 +24,9 @@ const parseEngine = (value?: string) => {
   return value;
 };
 
+export const startMessage = (file: string, liveCaptions: boolean) =>
+  `recording -> ${file}\nstop with: localscribe stop` + (liveCaptions ? "\nlive assist: run `localscribe live` in another pane" : "");
+
 export const startCommand: Command = async ({ values }) => {
   ensureToolPath();
   const engine = parseEngine(values.engine);
@@ -39,6 +42,6 @@ export const startCommand: Command = async ({ values }) => {
     selection,
     engine,
   });
-  console.log(`recording -> ${state.file}\nstop with: localscribe stop`);
+  console.log(startMessage(state.file, values.live === true));
   return 0;
 };

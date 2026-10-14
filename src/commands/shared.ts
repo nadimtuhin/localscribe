@@ -5,6 +5,7 @@ export const HELP = `localscribe - local screen recorder
   localscribe start [--out file.mp4] [--screen N] [--fps 30] [--mic N] [--no-mic] [--no-system-audio]
                    [--window <id|name>] [--area x,y,w,h] [--display N] [--engine sck|ffmpeg]
                    [--transcribe] [--live] [--notes]
+  localscribe live        (live captions + Hermes suggestions + manual notes; needs start --live)
   localscribe stop
   localscribe status
   localscribe list

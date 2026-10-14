@@ -4,6 +4,7 @@ export interface PluginOptions {
   transcribe?: boolean; // --transcribe
   liveCaptions?: boolean; // --live
   notes?: boolean; // --notes
+  systemAudio?: boolean; // false with --no-system-audio; unset means on
 }
 
 export interface PluginContext {

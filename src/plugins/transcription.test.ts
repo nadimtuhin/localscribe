@@ -67,40 +67,14 @@ const stoppedContext = (base: string, lines: string[]): StoppedContext => ({
 });
 
 describe("start", () => {
-  test("live captions spawn whisper-stream detached and register it as a sidecar", async () => {
+  test("live captions belong to the live plugin: transcription starts nothing, even for --live", async () => {
     const { runner, spawned } = fakeRunner();
     const sidecars: [number, string][] = [];
     const plugin = createTranscription({ runner, env: { LOCALSCRIBE_WHISPER_MODEL: model } });
-    await plugin.start!(startedContext(join(dir, "rec"), { transcribe: true, liveCaptions: true }, sidecars));
-    expect(spawned).toHaveLength(1);
-    expect(spawned[0]!.command).toEqual(["whisper-stream", "-m", model, "-c", "-1", "--step", "3000", "--length", "10000", "-f", join(dir, "rec.live.txt")]);
-    expect(sidecars).toEqual([[4242, "whisper-stream"]]);
-  });
-
-  test("transcribe without live starts nothing", async () => {
-    const { runner, spawned } = fakeRunner();
-    const plugin = createTranscription({ runner, env: { LOCALSCRIBE_WHISPER_MODEL: model } });
-    await plugin.start!(startedContext(join(dir, "rec"), { transcribe: true }));
+    const states = await runStartHooks([plugin], startedContext(join(dir, "rec"), { transcribe: true, liveCaptions: true }, sidecars));
+    expect(states).toEqual({ transcription: null });
     expect(spawned).toEqual([]);
-  });
-
-  test("missing whisper-stream is a logged plugin error, not a crash", async () => {
-    const { runner, spawned } = fakeRunner({ binaries: ["ffmpeg", "whisper-cli"] });
-    const plugin = createTranscription({ runner, env: { LOCALSCRIBE_WHISPER_MODEL: model } });
-    const lines: string[] = [];
-    const states = await runStartHooks([plugin], startedContext(join(dir, "rec"), { transcribe: true, liveCaptions: true }, [], lines));
-    expect(states).toEqual({});
-    expect(spawned).toEqual([]);
-    expect(lines.join("\n")).toMatch(/^transcription: .*whisper-stream.*brew install whisper-cpp/);
-  });
-
-  test("missing model is a logged plugin error naming the path", async () => {
-    const { runner } = fakeRunner();
-    const missing = join(dir, "nope.bin");
-    const plugin = createTranscription({ runner, env: { LOCALSCRIBE_WHISPER_MODEL: missing } });
-    const lines: string[] = [];
-    await runStartHooks([plugin], startedContext(join(dir, "rec"), { transcribe: true, liveCaptions: true }, [], lines));
-    expect(lines.join("\n")).toContain(`transcription: whisper model not found: ${missing}`);
+    expect(sidecars).toEqual([]);
   });
 });
 
