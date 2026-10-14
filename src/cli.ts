@@ -1,10 +1,12 @@
 #!/usr/bin/env bun
 import { parseArgs } from "node:util";
+import { pluginOptionsFromFlags } from "./plugins/index.ts";
 import { activeRecording, list, RecorderError, start, stop } from "./recorder.ts";
 
 const HELP = `localscribe - local screen recorder
 
   localscribe start [--out file.mp4] [--screen N] [--fps 30] [--mic N] [--no-mic] [--no-system-audio]
+                   [--transcribe] [--live] [--notes]
   localscribe stop
   localscribe status
   localscribe list`;
@@ -27,6 +29,9 @@ async function main(argv: string[]): Promise<number> {
       mic: { type: "string" },
       "no-mic": { type: "boolean" },
       "no-system-audio": { type: "boolean" },
+      transcribe: { type: "boolean" },
+      live: { type: "boolean" },
+      notes: { type: "boolean" },
       help: { type: "boolean", short: "h" },
     },
   });
@@ -39,6 +44,7 @@ async function main(argv: string[]): Promise<number> {
         fps: optionalNumber(values.fps),
         mic: values["no-mic"] ? false : optionalNumber(values.mic),
         systemAudio: !values["no-system-audio"],
+        plugins: pluginOptionsFromFlags(values),
       });
       console.log(`recording -> ${state.file}\nstop with: localscribe stop`);
       return 0;

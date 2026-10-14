@@ -3,6 +3,8 @@ import { dirname, join, resolve } from "node:path";
 import { buildArgs, buildMuxArgs, parseMicrophones, parseScreens } from "./ffmpeg.ts";
 import { defaultRecordingsDir, stateFilePath, timestampedFilename, withMp4Extension } from "./paths.ts";
 import { clearState, isAlive, isRunning, readState, writeState, type RecordingState } from "./state.ts";
+import { plugins, runStartHooks, runStopHooks } from "./plugins/index.ts";
+import type { PluginOptions } from "./plugins/types.ts";
 
 const STOP_TIMEOUT_MS = 10_000;
 const STARTUP_CHECK_MS = 1_500;
@@ -53,7 +55,10 @@ export interface StartOptions {
   fps?: number;
   mic?: number | false; // device index, or false to skip
   systemAudio?: boolean;
+  plugins?: PluginOptions;
 }
+
+const printLine = (line: string) => console.log(line);
 
 export async function start(opts: StartOptions = {}): Promise<RecordingState> {
   if (!Bun.which("ffmpeg")) throw new RecorderError("ffmpeg not found. Install it: brew install ffmpeg");
@@ -112,7 +117,12 @@ export async function start(opts: StartOptions = {}): Promise<RecordingState> {
         `Check Screen Recording and Microphone access for your terminal in System Settings > Privacy & Security.\n${log}`,
     );
   }
-  return state;
+
+  const pluginOptions = opts.plugins ?? {};
+  const pluginStates = await runStartHooks(plugins, { base: partsBase, options: pluginOptions, micDevice, log: printLine });
+  const withPlugins: RecordingState = { ...state, pluginOptions, plugins: pluginStates };
+  writeState(statePath, withPlugins);
+  return withPlugins;
 }
 
 async function interrupt(pid: number): Promise<{ forced: boolean }> {
@@ -166,6 +176,16 @@ export async function stop(): Promise<StopResult> {
         mixError = mux.stderr.toString().trim();
       }
     }
+  }
+
+  if (!mixError && existsSync(state.file)) {
+    await runStopHooks(plugins, {
+      base: state.file.replace(/\.mp4$/, ""),
+      options: state.pluginOptions ?? {},
+      file: state.file,
+      pluginStates: state.plugins ?? {},
+      log: printLine,
+    });
   }
 
   return { file: state.file, durationMs, bytes: Bun.file(state.file).size, forced, keptParts, mixError };

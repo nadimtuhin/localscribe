@@ -1,5 +1,6 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import type { PluginOptions } from "./plugins/types.ts";
 
 export interface RecordingState {
   pid: number; // ffmpeg (screen + mic)
@@ -8,6 +9,8 @@ export interface RecordingState {
   videoHasMic: boolean;
   systemAudio?: { pid: number; file: string };
   startedAt: string;
+  pluginOptions?: PluginOptions; // flags from `start`, so a separate `stop` process knows what ran
+  plugins?: Record<string, unknown>; // each plugin's start() result, keyed by plugin name
 }
 
 export function readState(path: string): RecordingState | null {
