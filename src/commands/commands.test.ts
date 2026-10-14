@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { runCli } from "./index.ts";
+import { startMessage } from "./start.ts";
 
 let out: string[];
 let err: string[];
@@ -24,6 +25,21 @@ describe("runCli", () => {
   test.each(["devices"])("%s is a stub that exits 1 with 'not implemented'", async (command) => {
     expect(await runCli([command, "file.md"])).toBe(1);
     expect(err.join("\n")).toContain("not implemented");
+  });
+
+  test("help documents the live command", async () => {
+    await runCli(["--help"]);
+    expect(out.join("\n")).toContain("localscribe live");
+  });
+
+  test("live without a recording fails with a clear message", async () => {
+    expect(await runCli(["live"])).toBe(1);
+    expect(err.join("\n")).toMatch(/not recording|live assist/);
+  });
+
+  test("start prints the live hint only for --live", () => {
+    expect(startMessage("/r/a.mp4", true)).toContain("run `localscribe live` in another pane");
+    expect(startMessage("/r/a.mp4", false)).not.toContain("localscribe live");
   });
 
   test("list runs against the recordings dir without throwing", async () => {

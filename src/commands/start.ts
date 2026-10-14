@@ -2,6 +2,9 @@ import { pluginOptionsFromFlags } from "../plugins/index.ts";
 import { start } from "../recorder.ts";
 import { optionalNumber, type Command } from "./shared.ts";
 
+export const startMessage = (file: string, liveCaptions: boolean) =>
+  `recording -> ${file}\nstop with: localscribe stop` + (liveCaptions ? "\nlive assist: run `localscribe live` in another pane" : "");
+
 export const startCommand: Command = async ({ values }) => {
   const state = await start({
     out: values.out,
@@ -11,6 +14,6 @@ export const startCommand: Command = async ({ values }) => {
     systemAudio: !values["no-system-audio"],
     plugins: pluginOptionsFromFlags(values),
   });
-  console.log(`recording -> ${state.file}\nstop with: localscribe stop`);
+  console.log(startMessage(state.file, values.live === true));
   return 0;
 };

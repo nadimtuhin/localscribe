@@ -10,14 +10,14 @@
 
 ## 2. Capture and worker
 
-- [ ] 2.1 `native/livesys.swift` 16 kHz mono WAV segments
-- [ ] 2.2 `live` plugin: spawn segmenters + worker, `addSidecar` each; remove whisper-stream from `transcription`
-- [ ] 2.3 `live-worker` loop (injected runner/clock), append `live.txt`
+- [x] 2.1 `native/livesys.swift` 16 kHz mono WAV segments
+- [x] 2.2 `live` plugin: spawn segmenters + worker, `addSidecar` each; remove whisper-stream from `transcription`
+- [x] 2.3 `live-worker` loop (injected runner/clock), append `live.txt`
 
 ## 3. TUI
 
-- [ ] 3.1 `localscribe live` controller (suggestion loop, manual input, ANSI IO)
-- [ ] 3.2 `start --live` hint, help text
+- [x] 3.1 `localscribe live` controller (suggestion loop, manual input, ANSI IO)
+- [x] 3.2 `start --live` hint, help text
 
 ## 4. Verification
 
