@@ -56,10 +56,8 @@ final class SegmentWriter: NSObject, SCStreamOutput, SCStreamDelegate, @unchecke
 
   func stream(_ stream: SCStream, didOutputSampleBuffer buffer: CMSampleBuffer, of type: SCStreamOutputType) {
     guard type == .audio, buffer.isValid, let block = CMSampleBufferGetDataBuffer(buffer) else { return }
-    var length = 0
-    var pointer: UnsafeMutablePointer<Int8>?
-    guard CMBlockBufferGetDataPointer(block, atOffset: 0, lengthAtOffsetOut: nil, totalLengthOut: &length, dataPointerOut: &pointer) == noErr, let raw = pointer else { return }
-    let floats = UnsafeBufferPointer(start: UnsafeRawPointer(raw).assumingMemoryBound(to: Float.self), count: length / MemoryLayout<Float>.size)
+    var floats = [Float](repeating: 0, count: CMBlockBufferGetDataLength(block) / MemoryLayout<Float>.size)
+    guard !floats.isEmpty, CMBlockBufferCopyDataBytes(block, atOffset: 0, dataLength: floats.count * MemoryLayout<Float>.size, destination: &floats) == kCMBlockBufferNoErr else { return }
     for f in floats { samples.append(Int16(max(-1, min(1, f)) * 32_767)) }
     while samples.count >= segmentSamples {
       write(Array(samples.prefix(segmentSamples)))
