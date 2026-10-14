@@ -9,8 +9,12 @@ export function formatTimestamp(ms: number): string {
   return `${pad(Math.floor(totalSeconds / 60))}:${pad(totalSeconds % 60)}`;
 }
 
+// What whisper invents on silence; a real one-word turn is not worth keeping next to the false ones.
+const HALLUCINATIONS = new Set(["you", "thank you", "thanks", "bye"]);
+
 // Whisper emits markers like [BLANK_AUDIO] or (music) for non-speech; they are not transcript.
-export const isNonSpeech = (text: string) => text === "" || /^[[(].*[\])]$/.test(text);
+export const isNonSpeech = (text: string) =>
+  text === "" || /^[[(].*[\])]$/.test(text) || HALLUCINATIONS.has(text.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, "").trim());
 
 export function segmentsToMarkdown(segments: WhisperSegment[]): string {
   return segments

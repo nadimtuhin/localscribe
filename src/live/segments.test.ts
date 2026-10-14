@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildMicSegmentArgs, parseSegmentName, readySegments, segmentSpan } from "./segments.ts";
+import { buildMicSegmentArgs, parseSegmentName, readySegments, rmsDbfs, SILENCE_DBFS, segmentSpan } from "./segments.ts";
 
 describe("parseSegmentName", () => {
   test("reads speaker and sequence", () => {
@@ -37,6 +37,28 @@ describe("buildMicSegmentArgs", () => {
       "-nostdin", "-hide_banner", "-f", "avfoundation", "-i", ":2", "-ac", "1", "-ar", "16000",
       "-f", "segment", "-segment_time", "6", "-segment_format", "wav", "-segment_start_number", "1", "/r/a.live/me_%05d.wav",
     ]);
+  });
+});
+
+const wav = (samples: number[]) => {
+  const bytes = new Uint8Array(44 + samples.length * 2);
+  const view = new DataView(bytes.buffer);
+  samples.forEach((sample, i) => view.setInt16(44 + i * 2, sample, true));
+  return bytes;
+};
+
+describe("rmsDbfs", () => {
+  test("full-scale square wave is 0 dBFS, half scale about -6, digital silence is -Infinity", () => {
+    expect(rmsDbfs(wav([32767, -32768, 32767, -32768]))).toBeCloseTo(0, 1);
+    expect(rmsDbfs(wav([16384, -16384, 16384, -16384]))).toBeCloseTo(-6, 0);
+    expect(rmsDbfs(wav([0, 0, 0, 0]))).toBe(-Infinity);
+  });
+  test("a file with no samples is silent", () => {
+    expect(rmsDbfs(wav([]))).toBe(-Infinity);
+  });
+  test("room tone below the gate reads under SILENCE_DBFS, speech level above it", () => {
+    expect(rmsDbfs(wav([100, -100, 100, -100]))).toBeLessThan(SILENCE_DBFS);
+    expect(rmsDbfs(wav([2000, -2000, 2000, -2000]))).toBeGreaterThan(SILENCE_DBFS);
   });
 });
 

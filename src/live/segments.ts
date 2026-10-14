@@ -36,3 +36,15 @@ export function segmentSpan(file: { mtimeMs: number; bytes: number }, recordingS
   const endMs = file.mtimeMs - recordingStartMs;
   return { startMs: Math.max(0, endMs - durationMs), endMs };
 }
+
+export const SILENCE_DBFS = -45;
+
+// RMS level of a 16-bit little-endian PCM wav, in dB relative to full scale. -Infinity for no signal.
+export function rmsDbfs(wav: Uint8Array): number {
+  const view = new DataView(wav.buffer, wav.byteOffset, wav.byteLength);
+  const count = Math.floor(Math.max(0, wav.byteLength - WAV_HEADER_BYTES) / 2);
+  if (count === 0) return -Infinity;
+  let sumSquares = 0;
+  for (let i = 0; i < count; i++) sumSquares += (view.getInt16(WAV_HEADER_BYTES + i * 2, true) / 32768) ** 2;
+  return 10 * Math.log10(sumSquares / count);
+}

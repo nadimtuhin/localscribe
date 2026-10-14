@@ -3,6 +3,13 @@ import { buildSegmentWhisperArgs, runLiveWorker, type WorkerDeps } from "./worke
 
 const START = 1_000_000;
 const SEGMENT_BYTES = 44 + 6 * 32_000;
+const wavOf = (sample: number) => {
+  const bytes = new Uint8Array(44 + 8);
+  for (let i = 0; i < 4; i++) new DataView(bytes.buffer).setInt16(44 + i * 2, i % 2 ? -sample : sample, true);
+  return bytes;
+};
+const LOUD = wavOf(3000);
+const QUIET = wavOf(50);
 
 // A scripted directory: each tick the test adds files, then the worker loop runs once per sleep.
 function harness(opts: { speakers?: ("me" | "them")[]; texts: Record<string, string>; ticks: { add?: Record<string, number>; at: number; active: boolean }[] }) {
@@ -18,6 +25,7 @@ function harness(opts: { speakers?: ("me" | "them")[]; texts: Record<string, str
     holdMs: 15_000,
     listDir: () => [...files.keys()],
     stat: (name) => ({ mtimeMs: files.get(name)!, bytes: SEGMENT_BYTES }),
+    readBytes: () => LOUD,
     transcribe: async (name) => {
       transcribed.push(name);
       return opts.texts[name] ?? "";
@@ -112,6 +120,18 @@ describe("runLiveWorker", () => {
     };
     await runLiveWorker(h.deps);
     expect(h.appended.join("")).toBe("[00:06] me: fine\n");
+  });
+
+  test("a near-silent segment never reaches whisper but is still deleted", async () => {
+    const h = harness({
+      speakers: ["me"],
+      texts: { "me_00001.wav": "Thank you.", "me_00002.wav": "real words" },
+      ticks: [{ at: 14_000, active: true, add: { "me_00001.wav": 6_000, "me_00002.wav": 12_000 } }, { at: 15_000, active: false }],
+    });
+    h.deps.readBytes = (name) => (name === "me_00001.wav" ? QUIET : LOUD);
+    await runLiveWorker(h.deps);
+    expect(h.transcribed).toEqual(["me_00002.wav"]);
+    expect(h.removed).toContain("me_00001.wav");
   });
 
   test("a failing tick is logged and the next tick carries on", async () => {

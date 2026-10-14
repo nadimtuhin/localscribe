@@ -16,6 +16,10 @@ describe("speechText", () => {
     expect(speechText("(music)")).toBeNull();
     expect(speechText("   ")).toBeNull();
   });
+  test("drops the stock hallucinations whisper makes on silence", () => {
+    for (const junk of ["you", "You.", " Thank you. ", "bye.", "Thanks!"]) expect(speechText(junk)).toBeNull();
+    expect(speechText("Thank you for the detailed answer.")).toBe("Thank you for the detailed answer.");
+  });
 });
 
 describe("LiveMerger", () => {

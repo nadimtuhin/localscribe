@@ -1,5 +1,5 @@
 import { formatLiveLine, LiveMerger, speechText } from "./lines.ts";
-import { parseSegmentName, readySegments, segmentSpan, type Speaker } from "./segments.ts";
+import { parseSegmentName, readySegments, rmsDbfs, segmentSpan, SILENCE_DBFS, type Speaker } from "./segments.ts";
 
 export interface WorkerDeps {
   speakers: Speaker[];
@@ -7,6 +7,7 @@ export interface WorkerDeps {
   holdMs: number;
   listDir(): string[];
   stat(name: string): { mtimeMs: number; bytes: number };
+  readBytes(name: string): Uint8Array; // the segment wav, to gate silence before whisper
   transcribe(name: string): Promise<string>; // raw whisper text for one segment
   remove(name: string): void;
   append(text: string): void;
@@ -34,7 +35,7 @@ export async function runLiveWorker(deps: WorkerDeps): Promise<void> {
       const { who } = parseSegmentName(name)!;
       const { startMs, endMs } = segmentSpan(deps.stat(name), deps.startedAtMs);
       try {
-        const text = speechText(await deps.transcribe(name));
+        const text = rmsDbfs(deps.readBytes(name)) < SILENCE_DBFS ? null : speechText(await deps.transcribe(name));
         if (text) merger.push({ atMs: startMs, who, text });
       } catch {
         // One bad segment must not stop the live view; the final transcript is rebuilt on stop.

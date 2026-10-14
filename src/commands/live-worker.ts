@@ -1,4 +1,4 @@
-import { appendFileSync, readdirSync, rmSync, statSync } from "node:fs";
+import { appendFileSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { buildSegmentWhisperArgs, runLiveWorker } from "../live/worker.ts";
 import type { Speaker } from "../live/segments.ts";
@@ -29,6 +29,7 @@ export const liveWorkerCommand: Command = async ({ positionals }) => {
       const info = statSync(join(dir, name));
       return { mtimeMs: info.mtimeMs, bytes: info.size };
     },
+    readBytes: (name) => readFileSync(join(dir, name)),
     transcribe: async (name) => {
       const child = Bun.spawn(["whisper-cli", ...buildSegmentWhisperArgs({ model, wav: join(dir, name) })], { stdout: "pipe", stderr: "ignore", stdin: "ignore" });
       const [text, exitCode] = await Promise.all([new Response(child.stdout).text(), child.exited]);
