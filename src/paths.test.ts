@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { homedir } from "node:os";
 import { defaultRecordingsDir, stateFilePath } from "./paths.ts";
 
 describe("default locations", () => {
@@ -11,7 +12,7 @@ describe("default locations", () => {
   });
 
   test("both default to the current user's home", () => {
-    const home = process.env.HOME!;
+    const home = homedir();
     expect(defaultRecordingsDir()).toBe(`${home}/Movies/localscribe`);
     expect(stateFilePath()).toBe(`${home}/.localscribe/state.json`);
   });

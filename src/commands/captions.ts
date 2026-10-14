@@ -13,10 +13,10 @@ export interface CaptionsDeps {
 }
 
 const realDeps: CaptionsDeps = {
-  active: () => activeRecording(),
-  sleep: (ms) => Bun.sleep(ms),
-  print: (text) => void process.stdout.write(text),
-  printError: (text) => void console.error(text),
+  active: activeRecording,
+  sleep: Bun.sleep,
+  print: process.stdout.write.bind(process.stdout),
+  printError: console.error,
 };
 
 // Tails `<base>.live.txt` of the active recording until the recording stops.

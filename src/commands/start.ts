@@ -32,28 +32,56 @@ export const startMessage = (file: string, liveCaptions: boolean) =>
 export const runsLiveInForeground = (flags: { live?: boolean; detach?: boolean }, isTty: boolean) =>
   flags.live === true && flags.detach !== true && isTty;
 
-export const startCommand: Command = async (args) => {
-  const { values } = args;
-  ensureToolPath();
-  const engine = parseEngine(values.engine);
-  const plugins = pluginOptionsFromFlags(values);
-  requireModelForStart(plugins, process.env);
-  const wantsSelection = values.window !== undefined || values.area !== undefined || values.display !== undefined;
-  const selection = wantsSelection ? selectionForStart(values, realRunner, ensureHelper(realRunner, CAPTURE)) : undefined;
-  const state = await start({
-    out: values.out,
-    screen: optionalNumber(values.screen),
-    fps: optionalNumber(values.fps),
-    mic: values["no-mic"] ? false : optionalNumber(values.mic),
-    systemAudio: !values["no-system-audio"],
-    plugins,
-    selection,
-    engine,
-  });
-  if (!runsLiveInForeground(values, Boolean(process.stdin.isTTY && process.stdout.isTTY))) {
-    console.log(startMessage(state.file, values.live === true));
-    return 0;
-  }
-  const liveExit = await liveCommand(args);
-  return Math.max(liveExit, await stopCommand(args));
+export interface StartDeps {
+  ensureToolPath: () => void;
+  env: Record<string, string | undefined>;
+  runner: ProcessRunner;
+  ensureHelper: typeof ensureHelper;
+  start: typeof start;
+  live: Command;
+  stop: Command;
+  isTty: boolean;
+  log: (text: string) => void;
+}
+
+const realDeps: StartDeps = {
+  ensureToolPath,
+  env: process.env,
+  runner: realRunner,
+  ensureHelper,
+  start,
+  live: liveCommand,
+  stop: stopCommand,
+  isTty: Boolean(process.stdin.isTTY && process.stdout.isTTY),
+  log: console.log,
 };
+
+export function createStartCommand(deps: StartDeps = realDeps): Command {
+  return async (args) => {
+    const { values } = args;
+    deps.ensureToolPath();
+    const engine = parseEngine(values.engine);
+    const plugins = pluginOptionsFromFlags(values);
+    requireModelForStart(plugins, deps.env);
+    const wantsSelection = values.window !== undefined || values.area !== undefined || values.display !== undefined;
+    const selection = wantsSelection ? selectionForStart(values, deps.runner, deps.ensureHelper(deps.runner, CAPTURE)) : undefined;
+    const state = await deps.start({
+      out: values.out,
+      screen: optionalNumber(values.screen),
+      fps: optionalNumber(values.fps),
+      mic: values["no-mic"] ? false : optionalNumber(values.mic),
+      systemAudio: !values["no-system-audio"],
+      plugins,
+      selection,
+      engine,
+    });
+    if (!runsLiveInForeground(values, deps.isTty)) {
+      deps.log(startMessage(state.file, values.live === true));
+      return 0;
+    }
+    const liveExit = await deps.live(args);
+    return Math.max(liveExit, await deps.stop(args));
+  };
+}
+
+export const startCommand = createStartCommand();

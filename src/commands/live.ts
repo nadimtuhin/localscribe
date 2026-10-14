@@ -2,7 +2,7 @@ import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { loadContextFiles } from "../live/context.ts";
 import { createLiveSession } from "../live/session.ts";
 import { renderScreen } from "../live/render.ts";
-import { realHermesRun } from "../notes/generate.ts";
+import { realHermesRun, type HermesRun } from "../notes/generate.ts";
 import { activeRecording, readActive } from "../recorder.ts";
 import type { RecordingState } from "../state.ts";
 import type { Command } from "./shared.ts";
@@ -18,59 +18,77 @@ export interface LiveCommandDeps {
   runTui: (state: RecordingState) => Promise<void>;
 }
 
+// What the live view needs from the terminal and the clock; tests supply fakes.
+export interface TuiIo {
+  stdin: {
+    setRawMode(raw: boolean): unknown;
+    resume(): unknown;
+    pause(): unknown;
+    on(event: "data", listener: (chunk: Buffer) => void): unknown;
+    off(event: "data", listener: (chunk: Buffer) => void): unknown;
+  };
+  stdout: { write(text: string): unknown; columns?: number; rows?: number };
+  sleep: (ms: number) => Promise<void>;
+  readActive: () => RecordingState | null;
+  now: () => number;
+  run: HermesRun;
+}
+
 const readIfExists = (path: string) => (existsSync(path) ? readFileSync(path, "utf8") : "");
 
 // Terminal IO only; every behaviour lives in createLiveSession and renderScreen.
-async function runRealTui(recording: RecordingState): Promise<void> {
-  const base = recording.file.replace(/\.mp4$/, "");
-  const context = loadContextFiles(recording.pluginOptions?.contextFiles ?? [], (path) => readFileSync(path, "utf8"));
-  const session = createLiveSession({
-    role: recording.pluginOptions?.role,
-    lang: recording.pluginOptions?.lang,
-    context,
-    startedAtMs: Date.parse(recording.startedAt),
-    now: Date.now,
-    readLive: () => readIfExists(`${base}.live.txt`),
-    readManual: () => readIfExists(`${base}.manual.md`),
-    appendManual: (text) => appendFileSync(`${base}.manual.md`, text),
-    appendSuggestions: (text) => appendFileSync(`${base}.suggestions.md`, text),
-    run: realHermesRun,
-  });
-  const contextNote = context.length ? ` + ${context.length} context file(s)` : "";
-  session.state.status = `last 5 min of transcript + notes${contextNote} go to Hermes (may reach a cloud model). Type ?question to ask it.`;
+export function createTui(io: TuiIo): (recording: RecordingState) => Promise<void> {
+  return async (recording) => {
+    const base = recording.file.replace(/\.mp4$/, "");
+    const context = loadContextFiles(recording.pluginOptions?.contextFiles ?? [], (path) => readFileSync(path, "utf8"));
+    const session = createLiveSession({
+      role: recording.pluginOptions?.role,
+      lang: recording.pluginOptions?.lang,
+      context,
+      startedAtMs: Date.parse(recording.startedAt),
+      now: io.now,
+      readLive: () => readIfExists(`${base}.live.txt`),
+      readManual: () => readIfExists(`${base}.manual.md`),
+      appendManual: (text) => appendFileSync(`${base}.manual.md`, text),
+      appendSuggestions: (text) => appendFileSync(`${base}.suggestions.md`, text),
+      run: io.run,
+    });
+    const contextNote = context.length ? ` + ${context.length} context file(s)` : "";
+    session.state.status = `last 5 min of transcript + notes${contextNote} go to Hermes (may reach a cloud model). Type ?question to ask it.`;
 
-  const draw = () => process.stdout.write(renderScreen(session.state, { cols: process.stdout.columns || 80, rows: process.stdout.rows || 24 }));
-  let quit = false;
-  const onData = (chunk: Buffer) => {
-    const text = chunk.toString("utf8");
-    // Pasted text arrives as one chunk; escape sequences (arrows) must stay whole.
-    for (const key of text.startsWith("\x1b") ? [text] : [...text]) if (session.key(key).quit) quit = true;
-    draw();
-  };
-
-  process.stdout.write(ENTER_SCREEN);
-  process.stdin.setRawMode(true);
-  process.stdin.resume();
-  process.stdin.on("data", onData);
-  try {
-    while (!quit && readActive()) {
-      await session.tick();
+    const draw = () => io.stdout.write(renderScreen(session.state, { cols: io.stdout.columns || 80, rows: io.stdout.rows || 24 }));
+    let quit = false;
+    const onData = (chunk: Buffer) => {
+      const text = chunk.toString("utf8");
+      // Pasted text arrives as one chunk; escape sequences (arrows) must stay whole.
+      for (const key of text.startsWith("\x1b") ? [text] : [...text]) if (session.key(key).quit) quit = true;
       draw();
-      await Bun.sleep(REFRESH_MS);
+    };
+
+    io.stdout.write(ENTER_SCREEN);
+    io.stdin.setRawMode(true);
+    io.stdin.resume();
+    io.stdin.on("data", onData);
+    try {
+      while (!quit && io.readActive()) {
+        await session.tick();
+        draw();
+        await io.sleep(REFRESH_MS);
+      }
+    } finally {
+      io.stdin.off("data", onData);
+      io.stdin.setRawMode(false);
+      io.stdin.pause();
+      io.stdout.write(LEAVE_SCREEN);
     }
-  } finally {
-    process.stdin.off("data", onData);
-    process.stdin.setRawMode(false);
-    process.stdin.pause();
-    process.stdout.write(LEAVE_SCREEN);
-  }
+  };
 }
 
 const realDeps: LiveCommandDeps = {
-  active: () => activeRecording(),
+  active: activeRecording,
   isTty: Boolean(process.stdin.isTTY && process.stdout.isTTY),
-  printError: (text) => void console.error(text),
-  runTui: runRealTui,
+  printError: console.error,
+  runTui: createTui({ stdin: process.stdin, stdout: process.stdout, sleep: Bun.sleep, readActive, now: Date.now, run: realHermesRun }),
 };
 
 export function createLiveCommand(deps: LiveCommandDeps = realDeps): Command {

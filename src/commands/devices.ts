@@ -9,8 +9,21 @@ export const devicesOutput = (flags: { json?: boolean }, runner: ProcessRunner, 
   return flags.json ? JSON.stringify(report) : formatDevicesText(report);
 };
 
-export const devicesCommand: Command = async ({ values }) => {
-  ensureToolPath();
-  console.log(devicesOutput(values, realRunner, ensureHelper(realRunner, CAPTURE)));
-  return 0;
-};
+export interface DevicesDeps {
+  ensureToolPath: () => void;
+  ensureHelper: typeof ensureHelper;
+  runner: ProcessRunner;
+  log: (text: string) => void;
+}
+
+const realDeps: DevicesDeps = { ensureToolPath, ensureHelper, runner: realRunner, log: console.log };
+
+export function createDevicesCommand(deps: DevicesDeps = realDeps): Command {
+  return async ({ values }) => {
+    deps.ensureToolPath();
+    deps.log(devicesOutput(values, deps.runner, deps.ensureHelper(deps.runner, CAPTURE)));
+    return 0;
+  };
+}
+
+export const devicesCommand = createDevicesCommand();
