@@ -58,10 +58,53 @@ describe("LiveMerger", () => {
   test("the same text from the other speaker is kept", () => {
     const merger = new LiveMerger(["me", "them"], 15_000);
     merger.push(line(1_000, "me", "Yes."));
-    merger.push(line(2_000, "them", "Yes."));
-    merger.progress("me", 9_000);
-    merger.progress("them", 9_000);
-    expect(merger.release(9_000)).toHaveLength(2);
+    merger.push(line(12_000, "them", "Yes."));
+    merger.progress("me", 20_000);
+    merger.progress("them", 20_000);
+    expect(merger.release(20_000)).toHaveLength(2);
+  });
+
+  describe("echo of the other side picked up by the mic", () => {
+    const released = (lines: ReturnType<typeof line>[]) => {
+      const merger = new LiveMerger(["me", "them"], 15_000);
+      for (const l of lines) merger.push(l);
+      merger.progress("me", 60_000);
+      merger.progress("them", 60_000);
+      return merger.release(60_000).map((l) => `${l.who}:${l.text}`);
+    };
+
+    test("drops a me line that mostly repeats a them line within 8 seconds", () => {
+      expect(released([line(10_000, "them", "so tell me about your last project"), line(14_000, "me", "tell me about your last project")])).toEqual([
+        "them:so tell me about your last project",
+      ]);
+    });
+
+    test("also when the echo is transcribed before the original", () => {
+      expect(released([line(10_000, "me", "tell me about your last project"), line(14_000, "them", "so tell me about your last project")])).toEqual([
+        "them:so tell me about your last project",
+      ]);
+    });
+
+    test("keeps a me line that is different, or too far in time", () => {
+      expect(released([line(10_000, "them", "so tell me about your last project"), line(14_000, "me", "I built a billing system")])).toHaveLength(2);
+      expect(released([line(10_000, "them", "so tell me about your last project"), line(25_000, "me", "tell me about your last project")])).toHaveLength(2);
+    });
+
+    test("never drops a them line", () => {
+      expect(released([line(10_000, "me", "great question"), line(12_000, "them", "great question")]).filter((l) => l.startsWith("them"))).toHaveLength(1);
+    });
+
+    test("remembers released them lines across releases", () => {
+      const merger = new LiveMerger(["me", "them"], 15_000);
+      merger.push(line(10_000, "them", "what is your biggest weakness"));
+      merger.progress("me", 12_000);
+      merger.progress("them", 12_000);
+      expect(merger.release(12_000)).toHaveLength(1);
+      merger.push(line(15_000, "me", "what is your biggest weakness"));
+      merger.progress("me", 30_000);
+      merger.progress("them", 30_000);
+      expect(merger.release(30_000)).toEqual([]);
+    });
   });
 
   test("flush releases everything in order", () => {
