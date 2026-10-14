@@ -1,0 +1,12 @@
+{
+  "name": "localscribe",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": { "localscribe": "src/cli.ts" },
+  "scripts": {
+    "start": "bun src/cli.ts start",
+    "stop": "bun src/cli.ts stop",
+    "test": "bun test"
+  },
+  "devDependencies": { "@types/bun": "latest" }
+}
