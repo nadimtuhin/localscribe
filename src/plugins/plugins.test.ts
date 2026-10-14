@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { pluginOptionsFromFlags, runStartHooks, runStopHooks } from "./index.ts";
+import { pluginOptionsFromFlags, plugins, runStartHooks, runStopHooks } from "./index.ts";
 import type { PluginOptions, RecorderPlugin } from "./types.ts";
 
 function recordingPlugin(name: string, calls: string[], overrides: Partial<RecorderPlugin> = {}): RecorderPlugin {
@@ -72,5 +72,20 @@ describe("pluginOptionsFromFlags", () => {
   test("--live and --notes both need a transcript", () => {
     expect(pluginOptionsFromFlags({ live: true }).transcribe).toBe(true);
     expect(pluginOptionsFromFlags({ notes: true }).transcribe).toBe(true);
+  });
+});
+
+describe("registry", () => {
+  test("transcription runs before notes", () => {
+    expect(plugins.map((p) => p.name)).toEqual(["transcription", "notes"]);
+  });
+
+  test("each plugin is enabled by its own flag", () => {
+    const [transcription, notes] = plugins as [RecorderPlugin, RecorderPlugin];
+    expect(transcription.enabled({})).toBe(false);
+    expect(transcription.enabled({ transcribe: true })).toBe(true);
+    expect(transcription.enabled({ liveCaptions: true })).toBe(true);
+    expect(notes.enabled({ transcribe: true })).toBe(false);
+    expect(notes.enabled({ notes: true })).toBe(true);
   });
 });

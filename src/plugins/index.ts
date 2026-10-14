@@ -1,3 +1,5 @@
+import { notes as notesPlugin } from "./notes.ts";
+import { transcription } from "./transcription.ts";
 import type { PluginContext, PluginOptions, RecorderPlugin, StartedContext } from "./types.ts";
 
 export interface PluginFlags { transcribe?: boolean; live?: boolean; notes?: boolean }
@@ -10,8 +12,8 @@ export function pluginOptionsFromFlags(flags: PluginFlags): PluginOptions {
 }
 
 // Order matters: stop hooks run in this order, so notes can read the transcript.
-// add-transcription and add-hermes-notes each append one entry here.
-export const plugins: RecorderPlugin[] = [];
+// Each change fills in its own file under src/plugins/; this list never needs to change again.
+export const plugins: RecorderPlugin[] = [transcription, notesPlugin];
 
 const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
