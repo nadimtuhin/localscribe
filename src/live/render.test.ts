@@ -40,6 +40,14 @@ describe("renderScreen", () => {
     expect(lines.slice(heading).join("\n")).toContain("Ask about budget");
   });
 
+  test("question and answer rows are shown as they are, suggestions get a bullet", () => {
+    const text = rows({ ...base, suggestions: ["probe timeline", "Q: why", "A: because", "   and more"] }).join("\n");
+    expect(text).toContain("- probe timeline");
+    expect(text).toMatch(/^Q: why$/m);
+    expect(text).toMatch(/^A: because$/m);
+    expect(text).toMatch(/^ {3}and more$/m);
+  });
+
   test("long lines are cut to the terminal width", () => {
     const lines = rows({ ...base, captions: ["x".repeat(200)] });
     expect(Math.max(...lines.map((l) => l.length))).toBeLessThanOrEqual(size.cols);

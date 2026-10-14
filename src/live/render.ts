@@ -32,7 +32,7 @@ export function renderScreen(state: ScreenState, { cols, rows }: ScreenSize): st
   const lines = [
     dim(cut("localscribe live - type a note + Enter, Ctrl-C to leave, Ctrl+Opt+D draw", cols)),
     ...pane("Captions", state.captions, captionRows, cols),
-    ...pane("Suggestions", state.suggestions.map((s) => `- ${s}`), body - captionRows, cols),
+    ...pane("Suggestions", state.suggestions.map((s) => (/^(?:Q: |A: | {3})/.test(s) ? s : `- ${s}`)), body - captionRows, cols),
     dim(cut(state.status, cols)),
     `> ${state.input}`.slice(-cols),
   ];

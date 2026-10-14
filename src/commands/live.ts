@@ -1,4 +1,5 @@
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
+import { loadContextFiles } from "../live/context.ts";
 import { createLiveSession } from "../live/session.ts";
 import { renderScreen } from "../live/render.ts";
 import { realHermesRun } from "../notes/generate.ts";
@@ -22,7 +23,10 @@ const readIfExists = (path: string) => (existsSync(path) ? readFileSync(path, "u
 // Terminal IO only; every behaviour lives in createLiveSession and renderScreen.
 async function runRealTui(recording: RecordingState): Promise<void> {
   const base = recording.file.replace(/\.mp4$/, "");
+  const context = loadContextFiles(recording.pluginOptions?.contextFiles ?? [], (path) => readFileSync(path, "utf8"));
   const session = createLiveSession({
+    role: recording.pluginOptions?.role,
+    context,
     startedAtMs: Date.parse(recording.startedAt),
     now: Date.now,
     readLive: () => readIfExists(`${base}.live.txt`),
@@ -31,7 +35,8 @@ async function runRealTui(recording: RecordingState): Promise<void> {
     appendSuggestions: (text) => appendFileSync(`${base}.suggestions.md`, text),
     run: realHermesRun,
   });
-  session.state.status = "last 5 min of transcript + notes go to Hermes (may reach a cloud model)";
+  const contextNote = context.length ? ` + ${context.length} context file(s)` : "";
+  session.state.status = `last 5 min of transcript + notes${contextNote} go to Hermes (may reach a cloud model). Type ?question to ask it.`;
 
   const draw = () => process.stdout.write(renderScreen(session.state, { cols: process.stdout.columns || 80, rows: process.stdout.rows || 24 }));
   let quit = false;
@@ -82,7 +87,12 @@ export function createLiveCommand(deps: LiveCommandDeps = realDeps): Command {
       deps.printError("live needs an interactive terminal");
       return 1;
     }
-    await deps.runTui(recording);
+    try {
+      await deps.runTui(recording);
+    } catch (error) {
+      deps.printError(error instanceof Error ? error.message : String(error));
+      return 1;
+    }
     return 0;
   };
 }

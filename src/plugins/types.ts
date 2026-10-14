@@ -6,6 +6,8 @@ export interface PluginOptions {
   notes?: boolean; // --notes
   systemAudio?: boolean; // false with --no-system-audio; unset means on
   draw?: boolean; // --draw
+  role?: "candidate" | "interviewer" | "meeting"; // --role, set with --live
+  contextFiles?: string[]; // --context paths, absolute, set with --live
 }
 
 export interface PluginContext {

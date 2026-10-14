@@ -1,17 +1,26 @@
+import { liveOptionsFromFlags, LiveOptionsError } from "../live/options.ts";
 import { annotation } from "./annotation.ts";
 import { live } from "./live.ts";
 import { notes as notesPlugin } from "./notes.ts";
 import { transcription } from "./transcription.ts";
 import type { PluginContext, PluginOptions, RecorderPlugin, StartedContext } from "./types.ts";
 
-export interface PluginFlags { transcribe?: boolean; draw?: boolean; live?: boolean; notes?: boolean; "no-system-audio"?: boolean }
+export interface PluginFlags { transcribe?: boolean; draw?: boolean; live?: boolean; notes?: boolean; "no-system-audio"?: boolean; role?: string; context?: string[] }
 
 // Live captions and notes are both built on the final transcript, so they turn it on.
 // --live also implies notes: the speaker-labelled live transcript is what they summarise.
 export function pluginOptionsFromFlags(flags: PluginFlags): PluginOptions {
   const liveCaptions = flags.live === true;
   const notes = flags.notes === true || liveCaptions;
-  return { transcribe: flags.transcribe === true || liveCaptions || notes, liveCaptions, notes, systemAudio: flags["no-system-audio"] !== true, draw: flags.draw === true };
+  if (!liveCaptions && (flags.role !== undefined || flags.context !== undefined)) throw new LiveOptionsError("--role and --context need --live");
+  return {
+    transcribe: flags.transcribe === true || liveCaptions || notes,
+    liveCaptions,
+    notes,
+    systemAudio: flags["no-system-audio"] !== true,
+    draw: flags.draw === true,
+    ...(liveCaptions ? liveOptionsFromFlags(flags) : {}),
+  };
 }
 
 // Order matters: stop hooks run in this order, so notes can read the transcript.

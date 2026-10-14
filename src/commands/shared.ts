@@ -5,6 +5,7 @@ export const HELP = `localscribe - local screen recorder
   localscribe start [--out file.mp4] [--screen N] [--fps 30] [--mic N] [--no-mic] [--no-system-audio]
                    [--window <id|name>] [--area x,y,w,h] [--display N] [--engine sck|ffmpeg]
                    [--transcribe] [--live] [--notes] [--draw] [-d|--detach]
+                   [--role candidate|interviewer|meeting] [--context <file>]...   (with --live; type "?question" in the live view to ask Hermes)
                    (--live opens the live view here; quitting it stops the recording. -d runs in the background)
   localscribe live        (reattach the live view to a recording started with --live -d)
   localscribe stop
@@ -31,6 +32,8 @@ export const cliOptions = {
   area: { type: "string" },
   display: { type: "string" },
   engine: { type: "string" },
+  role: { type: "string" },
+  context: { type: "string", multiple: true },
   json: { type: "boolean" },
   help: { type: "boolean", short: "h" },
 } as const;
