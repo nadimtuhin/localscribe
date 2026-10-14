@@ -14,6 +14,7 @@ const STARTUP_CHECK_MS = 1_500;
 const PROJECT_ROOT = join(import.meta.dir, "..");
 const SYSAUDIO = { source: join(PROJECT_ROOT, "native", "sysaudio.swift"), binary: join(PROJECT_ROOT, "bin", "sysaudio") };
 export const CAPTURE = { source: join(PROJECT_ROOT, "native", "capture.swift"), binary: join(PROJECT_ROOT, "bin", "localscribe-capture") };
+export const ANNOTATE = { source: join(PROJECT_ROOT, "native", "annotate.swift"), binary: join(PROJECT_ROOT, "bin", "localscribe-annotate") };
 
 export class RecorderError extends Error {}
 

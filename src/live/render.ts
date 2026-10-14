@@ -30,7 +30,7 @@ export function renderScreen(state: ScreenState, { cols, rows }: ScreenSize): st
   const body = Math.max(2, rows - CHROME_ROWS);
   const captionRows = Math.ceil(body * CAPTIONS_SHARE);
   const lines = [
-    dim(cut("localscribe live - type a note + Enter, Ctrl-C to leave", cols)),
+    dim(cut("localscribe live - type a note + Enter, Ctrl-C to leave, Ctrl+Opt+D draw", cols)),
     ...pane("Captions", state.captions, captionRows, cols),
     ...pane("Suggestions", state.suggestions.map((s) => `- ${s}`), body - captionRows, cols),
     dim(cut(state.status, cols)),

@@ -67,7 +67,7 @@ describe("runStopHooks", () => {
 
 describe("pluginOptionsFromFlags", () => {
   test("nothing enabled by default", () => {
-    expect(pluginOptionsFromFlags({})).toEqual({ transcribe: false, liveCaptions: false, notes: false, systemAudio: true });
+    expect(pluginOptionsFromFlags({})).toEqual({ transcribe: false, liveCaptions: false, notes: false, systemAudio: true, draw: false });
     expect(pluginOptionsFromFlags({ "no-system-audio": true }).systemAudio).toBe(false);
   });
   test("--live and --notes both need a transcript", () => {
@@ -81,7 +81,7 @@ describe("pluginOptionsFromFlags", () => {
 
 describe("registry", () => {
   test("live starts first, and transcription runs before notes", () => {
-    expect(plugins.map((p) => p.name)).toEqual(["live", "transcription", "notes"]);
+    expect(plugins.map((p) => p.name)).toEqual(["live", "transcription", "notes", "annotation"]);
   });
 
   test("each plugin is enabled by its own flag", () => {
