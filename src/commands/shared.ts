@@ -4,8 +4,9 @@ export const HELP = `localscribe - local screen recorder
 
   localscribe start [--out file.mp4] [--screen N] [--fps 30] [--mic N] [--no-mic] [--no-system-audio]
                    [--window <id|name>] [--area x,y,w,h] [--display N] [--engine sck|ffmpeg]
-                   [--transcribe] [--live] [--notes]
-  localscribe live        (live captions + Hermes suggestions + manual notes; needs start --live)
+                   [--transcribe] [--live] [--notes] [-d|--detach]
+                   (--live opens the live view here; quitting it stops the recording. -d runs in the background)
+  localscribe live        (reattach the live view to a recording started with --live -d)
   localscribe stop
   localscribe status
   localscribe list
@@ -24,6 +25,7 @@ export const cliOptions = {
   transcribe: { type: "boolean" },
   live: { type: "boolean" },
   notes: { type: "boolean" },
+  detach: { type: "boolean", short: "d" },
   window: { type: "string" },
   area: { type: "string" },
   display: { type: "string" },

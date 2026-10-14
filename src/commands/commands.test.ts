@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { runCli } from "./index.ts";
 import { createLiveCommand } from "./live.ts";
 import type { CliArgs } from "./shared.ts";
-import { startMessage } from "./start.ts";
+import { runsLiveInForeground, startMessage } from "./start.ts";
 
 let out: string[];
 let err: string[];
@@ -33,6 +33,13 @@ describe("runCli", () => {
     const live = createLiveCommand({ active: () => null, isTty: true, printError: (text) => void err.push(text), runTui: async () => {} });
     expect(await live({} as CliArgs)).toBe(1);
     expect(err.join("\n")).toContain("not recording");
+  });
+
+  test("start --live stays in the foreground with the live view unless detached or not a terminal", () => {
+    expect(runsLiveInForeground({ live: true }, true)).toBe(true);
+    expect(runsLiveInForeground({ live: true, detach: true }, true)).toBe(false);
+    expect(runsLiveInForeground({ live: true }, false)).toBe(false);
+    expect(runsLiveInForeground({}, true)).toBe(false);
   });
 
   test("start prints the live hint only for --live", () => {

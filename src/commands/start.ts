@@ -4,7 +4,9 @@ import { ensureToolPath } from "../ffmpeg.ts";
 import { pluginOptionsFromFlags } from "../plugins/index.ts";
 import { CAPTURE, ensureHelper, RecorderError, start } from "../recorder.ts";
 import { realRunner, type ProcessRunner } from "../runner.ts";
+import { liveCommand } from "./live.ts";
 import { optionalNumber, type Command } from "./shared.ts";
+import { stopCommand } from "./stop.ts";
 
 // `--window pick` / `--area pick` open an overlay in the helper and substitute what the user chose.
 function withPickedFlags(flags: SelectionFlags, runner: ProcessRunner, captureHelper: string): SelectionFlags {
@@ -27,7 +29,11 @@ const parseEngine = (value?: string) => {
 export const startMessage = (file: string, liveCaptions: boolean) =>
   `recording -> ${file}\nstop with: localscribe stop` + (liveCaptions ? "\nlive assist: run `localscribe live` in another pane" : "");
 
-export const startCommand: Command = async ({ values }) => {
+export const runsLiveInForeground = (flags: { live?: boolean; detach?: boolean }, isTty: boolean) =>
+  flags.live === true && flags.detach !== true && isTty;
+
+export const startCommand: Command = async (args) => {
+  const { values } = args;
   ensureToolPath();
   const engine = parseEngine(values.engine);
   const wantsSelection = values.window !== undefined || values.area !== undefined || values.display !== undefined;
@@ -42,6 +48,10 @@ export const startCommand: Command = async ({ values }) => {
     selection,
     engine,
   });
-  console.log(startMessage(state.file, values.live === true));
-  return 0;
+  if (!runsLiveInForeground(values, Boolean(process.stdin.isTTY && process.stdout.isTTY))) {
+    console.log(startMessage(state.file, values.live === true));
+    return 0;
+  }
+  const liveExit = await liveCommand(args);
+  return Math.max(liveExit, await stopCommand(args));
 };
