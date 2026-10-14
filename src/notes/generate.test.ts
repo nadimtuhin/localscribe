@@ -42,6 +42,17 @@ describe("generateNotes", () => {
     expect(seen!.cwd).not.toBe(process.cwd());
   });
 
+  test("feeds <base>.manual.md to hermes when it exists", async () => {
+    withTranscript();
+    writeFileSync(`${base}.manual.md`, "[00:30] note: ask about budget\n");
+    let prompt = "";
+    await generateNotes(base, meta(dir), async (args) => {
+      prompt = args.at(-1)!;
+      return { exitCode: 0, stdout: reply, stderr: "", timedOut: false };
+    });
+    expect(prompt).toContain("<manual_notes>\n[00:30] note: ask about budget");
+  });
+
   test("removes the temp cwd afterwards, even when hermes fails", async () => {
     withTranscript();
     let cwd = "";

@@ -35,7 +35,9 @@ export async function generateNotes(base: string, meta: NotesMeta, run: HermesRu
 
   const scratch = mkdtempSync(join(tmpdir(), "localscribe-notes-"));
   try {
-    const args = buildHermesArgs(buildNotesPrompt(transcript), process.env.LOCALSCRIBE_HERMES_ARGS);
+    const manualPath = `${base}.manual.md`;
+    const manualNotes = existsSync(manualPath) ? readFileSync(manualPath, "utf8") : "";
+    const args = buildHermesArgs(buildNotesPrompt(transcript, manualNotes), process.env.LOCALSCRIBE_HERMES_ARGS);
     const result = await run(args, scratch, HERMES_TIMEOUT_MS);
     if (result.timedOut) return skipped(`notes: hermes timed out after ${HERMES_TIMEOUT_MS / 1000}s`);
     if (result.exitCode !== 0) return skipped(`notes: hermes failed (exit ${result.exitCode}): ${result.stderr.trim().split("\n")[0] ?? ""}`);
