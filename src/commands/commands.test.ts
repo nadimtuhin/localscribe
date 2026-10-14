@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { runCli } from "./index.ts";
+import { createLiveCommand } from "./live.ts";
+import type { CliArgs } from "./shared.ts";
 import { startMessage } from "./start.ts";
 
 let out: string[];
@@ -28,8 +30,9 @@ describe("runCli", () => {
   });
 
   test("live without a recording fails with a clear message", async () => {
-    expect(await runCli(["live"])).toBe(1);
-    expect(err.join("\n")).toMatch(/not recording|live assist/);
+    const live = createLiveCommand({ active: () => null, isTty: true, printError: (text) => void err.push(text), runTui: async () => {} });
+    expect(await live({} as CliArgs)).toBe(1);
+    expect(err.join("\n")).toContain("not recording");
   });
 
   test("start prints the live hint only for --live", () => {
