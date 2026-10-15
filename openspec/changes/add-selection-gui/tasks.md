@@ -12,7 +12,7 @@
 
 ## 3. Menu-bar app
 
-- [ ] 3.1 SwiftPM package `native/LocalscribeBar`, `MenuBarExtra` with status + start/stop
-- [ ] 3.2 Source pickers from `devices --json`; transcribe/notes toggles
+- [x] 3.1 SwiftPM package `native/LocalscribeBar`, `MenuBarExtra` with status + start/stop
+- [x] 3.2 Source pickers from `devices --json`; transcribe/notes toggles
 - [ ] 3.3 Area overlay (drag, Esc cancels)
 - [ ] 3.4 Manual smoke: pick window → record 5s → file plays, correct size
