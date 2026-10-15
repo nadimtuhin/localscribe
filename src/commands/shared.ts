@@ -10,7 +10,7 @@ export const HELP = `localscribe - local screen recorder
                    (--live opens the live view here; quitting it stops the recording. -d runs in the background)
   localscribe live        (reattach the live view to a recording started with --live -d)
   localscribe stop
-  localscribe status
+  localscribe status [--json]
   localscribe list
   localscribe devices [--json]
   localscribe captions
