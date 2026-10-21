@@ -1,12 +1,14 @@
-import { formatTimestamp, isNonSpeech } from "../transcription/core.ts";
+import { devanagariToBengali, formatTimestamp, isNonSpeech } from "../transcription/core.ts";
 import type { Speaker } from "./segments.ts";
 
 export interface LiveLine { atMs: number; who: Speaker; text: string }
 
 export const formatLiveLine = ({ atMs, who, text }: LiveLine) => `[${formatTimestamp(atMs)}] ${who}: ${text}\n`;
 
-export function speechText(raw: string): string | null {
-  const text = raw.replace(/\s+/g, " ").trim();
+export function speechText(raw: string, lang?: string): string | null {
+  const isBangla = lang?.split(",").includes("bn");
+  const normalized = isBangla ? devanagariToBengali(raw) : raw;
+  const text = normalized.replace(/\s+/g, " ").trim();
   return isNonSpeech(text) ? null : text;
 }
 

@@ -1,3 +1,4 @@
+import { DEFAULT_PROMPT_FOR_LANG, whisperCliLanguage } from "../transcription/core.ts";
 import { formatLiveLine, LiveMerger, speechText } from "./lines.ts";
 import { parseSegmentName, readySegments, rmsDbfs, segmentSpan, SILENCE_DBFS, type Speaker } from "./segments.ts";
 
@@ -5,6 +6,7 @@ export interface WorkerDeps {
   speakers: Speaker[];
   startedAtMs: number;
   holdMs: number;
+  lang?: string;
   listDir(): string[];
   stat(name: string): { mtimeMs: number; bytes: number };
   readBytes(name: string): Uint8Array; // the segment wav, to gate silence before whisper
@@ -19,7 +21,26 @@ export interface WorkerDeps {
 
 const POLL_MS = 1000;
 
-export const buildSegmentWhisperArgs = ({ model, wav, lang }: { model: string; wav: string; lang: string }) => ["-m", model, "-f", wav, "-l", lang, "-nt", "-np"];
+export const buildSegmentWhisperArgs = ({
+  model,
+  wav,
+  lang,
+  prompt,
+}: {
+  model: string;
+  wav: string;
+  lang: string;
+  prompt?: string;
+}) => {
+  const codes = lang.split(",");
+  const hasBn = codes.includes("bn");
+  const cliLang = whisperCliLanguage(lang);
+  const p = prompt ?? DEFAULT_PROMPT_FOR_LANG[lang] ?? (hasBn ? DEFAULT_PROMPT_FOR_LANG["en,bn"] : undefined);
+  const args = ["-m", model, "-f", wav, "-l", cliLang, "-nt", "-np"];
+  if (p) args.push("--prompt", p);
+  if (hasBn) args.push("--suppress-nst");
+  return args;
+};
 
 // Transcribes each closed segment exactly once and appends `[mm:ss] who: text` lines in time order.
 export async function runLiveWorker(deps: WorkerDeps): Promise<void> {
@@ -35,7 +56,7 @@ export async function runLiveWorker(deps: WorkerDeps): Promise<void> {
       const { who } = parseSegmentName(name)!;
       const { startMs, endMs } = segmentSpan(deps.stat(name), deps.startedAtMs);
       try {
-        const text = rmsDbfs(deps.readBytes(name)) < SILENCE_DBFS ? null : speechText(await deps.transcribe(name));
+        const text = rmsDbfs(deps.readBytes(name)) < SILENCE_DBFS ? null : speechText(await deps.transcribe(name), deps.lang);
         if (text) merger.push({ atMs: startMs, who, text });
       } catch {
         // One bad segment must not stop the live view; the final transcript is rebuilt on stop.

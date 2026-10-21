@@ -38,7 +38,7 @@ export function createTranscription({ runner, env }: TranscriptionDeps = { runne
         if (whisper.exitCode !== 0) throw new Error(`whisper-cli failed: ${whisper.stderr.trim()}`);
         const { transcription } = JSON.parse(readFileSync(`${prefix}.json`, "utf8"));
         const transcript = `${ctx.base}.transcript.md`;
-        writeFileSync(transcript, segmentsToMarkdown(transcription));
+        writeFileSync(transcript, segmentsToMarkdown(transcription, lang));
         ctx.log(`transcript: ${transcript}`);
       } finally {
         rmSync(workDir, { recursive: true, force: true });

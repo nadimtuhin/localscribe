@@ -48,6 +48,7 @@ export function createLiveWorkerCommand(deps: LiveWorkerDeps = realDeps): Comman
 
     await runLiveWorker({
       speakers,
+      lang,
       startedAtMs: Date.parse(recording.startedAt),
       holdMs: HOLD_MS,
       listDir: () => readdirSync(dir),

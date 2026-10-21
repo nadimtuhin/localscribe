@@ -18,9 +18,33 @@ const HALLUCINATIONS = new Set(["you", "thank you", "thanks", "bye"]);
 export const isNonSpeech = (text: string) =>
   text === "" || /^[[(].*[\])]$/.test(text) || HALLUCINATIONS.has(text.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, "").trim());
 
-export function segmentsToMarkdown(segments: WhisperSegment[]): string {
+export function devanagariToBengali(text: string): string {
+  let out = "";
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]!;
+    const cp = text.charCodeAt(i);
+    if (ch === "व") {
+      out += "ব";
+    } else if (cp === 0x0964 || cp === 0x0965) {
+      out += ch;
+    } else if (cp >= 0x0901 && cp <= 0x096f) {
+      const bcp = cp + 0x80;
+      out += bcp >= 0x0981 && bcp <= 0x09fa ? String.fromCharCode(bcp) : ch;
+    } else {
+      out += ch;
+    }
+  }
+  return out;
+}
+
+export function segmentsToMarkdown(segments: WhisperSegment[], lang?: string): string {
+  const isBangla = lang?.split(",").includes("bn");
   return segments
-    .map((segment) => ({ at: segment.offsets.from, text: segment.text.trim() }))
+    .map((segment) => {
+      const trimmed = segment.text.trim();
+      const text = isBangla ? devanagariToBengali(trimmed) : trimmed;
+      return { at: segment.offsets.from, text };
+    })
     .filter(({ text }) => !isNonSpeech(text))
     .map(({ at, text }) => `[${formatTimestamp(at)}] ${text}\n`)
     .join("");
@@ -28,7 +52,41 @@ export function segmentsToMarkdown(segments: WhisperSegment[]): string {
 
 export const buildExtractAudioArgs = (input: string, wav: string) => ["-y", "-i", input, "-vn", "-ac", "1", "-ar", "16000", wav];
 
-export const buildWhisperArgs = ({ model, wav, prefix, lang }: { model: string; wav: string; prefix: string; lang: string }) => ["-m", model, "-f", wav, "-l", lang, "-oj", "-of", prefix];
+export function whisperCliLanguage(lang: string): string {
+  const codes = lang.split(",");
+  if (codes.includes("bn")) return "bn";
+  if (codes.length === 1) return codes[0]!;
+  return "auto";
+}
+
+export const DEFAULT_PROMPT_FOR_LANG: Record<string, string> = {
+  bn: "বাংলা ভাষা।",
+  "en,bn": "বাংলা এবং English মিশ্রিত আলোচনা ও মিটিং।",
+  "bn,en": "বাংলা এবং English মিশ্রিত আলোচনা ও মিটিং।",
+};
+
+export const buildWhisperArgs = ({
+  model,
+  wav,
+  prefix,
+  lang,
+  prompt,
+}: {
+  model: string;
+  wav: string;
+  prefix: string;
+  lang: string;
+  prompt?: string;
+}) => {
+  const codes = lang.split(",");
+  const hasBn = codes.includes("bn");
+  const cliLang = whisperCliLanguage(lang);
+  const p = prompt ?? DEFAULT_PROMPT_FOR_LANG[lang] ?? (hasBn ? DEFAULT_PROMPT_FOR_LANG["en,bn"] : undefined);
+  const args = ["-m", model, "-f", wav, "-l", cliLang, "-oj", "-of", prefix];
+  if (p) args.push("--prompt", p);
+  if (hasBn) args.push("--suppress-nst");
+  return args;
+};
 
 const MODELS_DIR = join(homedir(), ".hermes/models/whisper");
 const MODEL_URL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main";
@@ -42,9 +100,13 @@ export class WhisperModelError extends Error {
 
 // English has its own smaller, faster model; every other language (and auto-detect) needs a multilingual one.
 // small writes Bangla in Latin or Devanagari letters, so Bangla gets large-v3-turbo.
-const MODEL_FOR_LANGUAGE: Record<string, string> = { en: "ggml-base.en.bin", bn: "ggml-large-v3-turbo-q5_0.bin" };
-export const whisperModelPath = (env: Record<string, string | undefined>, lang: string = DEFAULT_LANGUAGE) =>
-  env.LOCALSCRIBE_WHISPER_MODEL ?? join(MODELS_DIR, MODEL_FOR_LANGUAGE[lang] ?? "ggml-small.bin");
+export const whisperModelPath = (env: Record<string, string | undefined>, lang: string = DEFAULT_LANGUAGE) => {
+  if (env.LOCALSCRIBE_WHISPER_MODEL) return env.LOCALSCRIBE_WHISPER_MODEL;
+  const codes = lang.split(",");
+  if (codes.includes("bn")) return join(MODELS_DIR, "ggml-large-v3-turbo-q5_0.bin");
+  if (codes.length === 1 && codes[0] === "en") return join(MODELS_DIR, "ggml-base.en.bin");
+  return join(MODELS_DIR, "ggml-small.bin");
+};
 
 export function requireWhisperModel(env: Record<string, string | undefined>, lang: string, exists: (path: string) => boolean = existsSync): string {
   const model = whisperModelPath(env, lang);

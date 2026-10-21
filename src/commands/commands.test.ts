@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
-import { runCli } from "./index.ts";
+import { normalizeLanguageArgs, runCli } from "./index.ts";
 import { createLiveCommand } from "./live.ts";
 import type { CliArgs } from "./shared.ts";
 import { runsLiveInForeground, startMessage } from "./start.ts";
@@ -15,6 +15,17 @@ beforeEach(() => {
 afterEach(() => {
   (console.log as unknown as { mockRestore(): void }).mockRestore();
   (console.error as unknown as { mockRestore(): void }).mockRestore();
+});
+
+describe("normalizeLanguageArgs", () => {
+  test("merges separate tokens after --lang", () => {
+    expect(normalizeLanguageArgs(["start", "--lang", "en", "bn"])).toEqual(["start", "--lang", "en,bn"]);
+    expect(normalizeLanguageArgs(["start", "--lang", "en,bn"])).toEqual(["start", "--lang", "en,bn"]);
+    expect(normalizeLanguageArgs(["start", "--lang", "en", "--lang", "bn"])).toEqual(["start", "--lang", "en,bn"]);
+    expect(normalizeLanguageArgs(["start", "--lang=en", "bn"])).toEqual(["start", "--lang", "en,bn"]);
+    expect(normalizeLanguageArgs(["start", "--lang=en,bn"])).toEqual(["start", "--lang", "en,bn"]);
+    expect(normalizeLanguageArgs(["start", "--no-mic", "-d"])).toEqual(["start", "--no-mic", "-d"]);
+  });
 });
 
 describe("runCli", () => {

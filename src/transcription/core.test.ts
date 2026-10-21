@@ -1,6 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import { homedir } from "node:os";
-import { buildExtractAudioArgs, buildWhisperArgs, formatTimestamp, requireWhisperModel, segmentsToMarkdown, whisperModelPath } from "./core.ts";
+import {
+  buildExtractAudioArgs,
+  buildWhisperArgs,
+  devanagariToBengali,
+  formatTimestamp,
+  requireWhisperModel,
+  segmentsToMarkdown,
+  whisperCliLanguage,
+  whisperModelPath,
+} from "./core.ts";
 
 const fixture = await Bun.file(new URL("../../test/fixtures/whisper.json", import.meta.url)).json();
 
@@ -12,6 +21,19 @@ describe("formatTimestamp", () => {
   });
   test("minutes keep counting past an hour", () => {
     expect(formatTimestamp(3_723_000)).toBe("62:03");
+  });
+});
+
+describe("devanagariToBengali", () => {
+  test("converts devanagari letters to bengali equivalents", () => {
+    expect(devanagariToBengali("आ")).toBe("আ");
+    expect(devanagariToBengali("क")).toBe("ক");
+    expect(devanagariToBengali("व")).toBe("ব");
+    expect(devanagariToBengali("।")).toBe("।");
+    expect(devanagariToBengali("॥")).toBe("॥");
+    expect(devanagariToBengali("Hello 123")).toBe("Hello 123");
+    expect(devanagariToBengali("आজকে सবায")).toBe("আজকে সবায");
+    expect(devanagariToBengali("\u0970")).toBe("\u0970");
   });
 });
 
@@ -33,6 +55,25 @@ describe("segmentsToMarkdown", () => {
   test("no speech yields an empty transcript", () => {
     expect(segmentsToMarkdown([])).toBe("");
   });
+  test("normalizes devanagari when language includes bn", () => {
+    const segments = [{ offsets: { from: 0, to: 1000 }, text: " आজকে सবায" }];
+    expect(segmentsToMarkdown(segments, "bn")).toBe("[00:00] আজকে সবায\n");
+    expect(segmentsToMarkdown(segments, "en,bn")).toBe("[00:00] আজকে সবায\n");
+  });
+});
+
+describe("whisperCliLanguage", () => {
+  test("returns single code directly", () => {
+    expect(whisperCliLanguage("en")).toBe("en");
+    expect(whisperCliLanguage("hi")).toBe("hi");
+  });
+  test("returns bn when codes include bn", () => {
+    expect(whisperCliLanguage("en,bn")).toBe("bn");
+    expect(whisperCliLanguage("bn,en")).toBe("bn");
+  });
+  test("returns auto for other multi-language combos", () => {
+    expect(whisperCliLanguage("en,hi")).toBe("auto");
+  });
 });
 
 describe("argument builders", () => {
@@ -41,6 +82,20 @@ describe("argument builders", () => {
   });
   test("whisper-cli: json output to <prefix>.json", () => {
     expect(buildWhisperArgs({ model: "/m.bin", wav: "/t/a.wav", prefix: "/t/out", lang: "hi" })).toEqual(["-m", "/m.bin", "-f", "/t/a.wav", "-l", "hi", "-oj", "-of", "/t/out"]);
+  });
+  test("whisper-cli: adds prompt and suppress-nst for bn or bilingual bn", () => {
+    expect(buildWhisperArgs({ model: "/m.bin", wav: "/t/a.wav", prefix: "/t/out", lang: "bn" })).toEqual([
+      "-m", "/m.bin", "-f", "/t/a.wav", "-l", "bn", "-oj", "-of", "/t/out",
+      "--prompt", "বাংলা ভাষা।", "--suppress-nst",
+    ]);
+    expect(buildWhisperArgs({ model: "/m.bin", wav: "/t/a.wav", prefix: "/t/out", lang: "en,bn" })).toEqual([
+      "-m", "/m.bin", "-f", "/t/a.wav", "-l", "bn", "-oj", "-of", "/t/out",
+      "--prompt", "বাংলা এবং English মিশ্রিত আলোচনা ও মিটিং।", "--suppress-nst",
+    ]);
+    expect(buildWhisperArgs({ model: "/m.bin", wav: "/t/a.wav", prefix: "/t/out", lang: "en,bn", prompt: "custom" })).toEqual([
+      "-m", "/m.bin", "-f", "/t/a.wav", "-l", "bn", "-oj", "-of", "/t/out",
+      "--prompt", "custom", "--suppress-nst",
+    ]);
   });
 });
 
@@ -53,6 +108,7 @@ describe("whisperModelPath", () => {
 
   test("bangla uses large-v3-turbo, since small writes Bangla in the wrong script", () => {
     expect(whisperModelPath({}, "bn")).toBe(`${models}/ggml-large-v3-turbo-q5_0.bin`);
+    expect(whisperModelPath({}, "en,bn")).toBe(`${models}/ggml-large-v3-turbo-q5_0.bin`);
   });
 
   test("any other language, and auto, use the multilingual small model", () => {
