@@ -9,15 +9,28 @@ final class BarModel: ObservableObject {
     @Published var devices = DeviceReport(displays: [], windows: [], microphones: [])
     @Published var message: String?
     @Published var busy = false
+    @Published var isFlashing = false
 
     private let recordingsDir = NSHomeDirectory() + "/Movies/localscribe"
     private var timer: Timer?
+    private var tickCount = 0
 
     init() {
         Task { await refreshDevices() }
         Task { await refreshStatus() }
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            Task { @MainActor in await self?.refreshStatus() }
+        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                self.tickCount += 1
+                if self.status.isRecording {
+                    self.isFlashing.toggle()
+                } else {
+                    self.isFlashing = false
+                }
+                if self.tickCount % 2 == 0 {
+                    await self.refreshStatus()
+                }
+            }
         }
     }
 
@@ -76,6 +89,26 @@ final class BarModel: ObservableObject {
         }
         guard let newest = newestNotesFile(files) else { message = "No notes yet"; return }
         NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: "\(recordingsDir)/\(newest)")])
+    }
+
+    func promptForName() {
+        let alert = NSAlert()
+        alert.messageText = "Conversation Name"
+        alert.informativeText = "Enter a name for the recording (or leave empty to auto-summarize with Hermes):"
+        let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
+        input.stringValue = options.name
+        input.placeholderString = "e.g. Weekly Standup"
+        alert.accessoryView = input
+        alert.addButton(withTitle: "OK")
+        alert.addButton(withTitle: "Clear")
+        alert.addButton(withTitle: "Cancel")
+        NSApp.activate(ignoringOtherApps: true)
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            options.name = input.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        } else if response == .alertSecondButtonReturn {
+            options.name = ""
+        }
     }
 
     private func firstLine(_ text: String, fallback: String) -> String {

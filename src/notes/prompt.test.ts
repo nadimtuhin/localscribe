@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildHermesArgs, buildNotesPrompt, formatNotesFile, MAX_TRANSCRIPT_CHARS, truncateTranscript } from "./prompt.ts";
+import { buildHermesArgs, buildNotesPrompt, extractTitle, formatNotesFile, MAX_TRANSCRIPT_CHARS, truncateTranscript } from "./prompt.ts";
 
 const meta = { file: "/r/2026-10-14_22-05-29.mp4", startedAt: "2026-10-14T22:05:29.000Z", durationMs: 135_000 };
 
@@ -41,9 +41,9 @@ describe("buildNotesPrompt", () => {
     expect(buildNotesPrompt("x")).not.toContain("role in this conversation");
   });
 
-  test("asks for the five sections", () => {
+  test("asks for the five sections and title", () => {
     const prompt = buildNotesPrompt("x");
-    for (const heading of ["## Summary", "## Key points", "## Decisions", "## Action items", "## Suggestions"]) {
+    for (const heading of ["## Title", "## Summary", "## Key points", "## Decisions", "## Action items", "## Suggestions"]) {
       expect(prompt).toContain(heading);
     }
   });
@@ -77,6 +77,19 @@ describe("formatNotesFile", () => {
     expect(out).toBe("# Notes: 2026-10-14_22-05-29.mp4\n\n- Started: 2026-10-14 22:05\n- Duration: 2m15s\n\n## Summary\nDone.\n");
   });
 
+  test("uses meta.title or meta.name when provided", () => {
+    const withTitle = formatNotesFile({ ...meta, title: "Custom Title", timeZone: "UTC" }, "## Summary\nDone.\n");
+    expect(withTitle).toContain("# Notes: Custom Title\n");
+    const withName = formatNotesFile({ ...meta, name: "Name Param", timeZone: "UTC" }, "## Summary\nDone.\n");
+    expect(withName).toContain("# Notes: Name Param\n");
+  });
+
+  test("uses extracted title from reply when meta name is missing", () => {
+    const replyWithTitle = "## Title\nExtracted Title\n\n## Summary\nDone.\n";
+    const out = formatNotesFile({ ...meta, timeZone: "UTC" }, replyWithTitle);
+    expect(out).toContain("# Notes: Extracted Title\n");
+  });
+
   test("omits duration when unknown", () => {
     const out = formatNotesFile({ file: "/r/a.mp4", startedAt: "2026-01-02T03:04:05.000Z", timeZone: "UTC" }, "body");
     expect(out).toBe("# Notes: a.mp4\n\n- Started: 2026-01-02 03:04\n\nbody\n");
@@ -93,6 +106,18 @@ describe("formatNotesFile", () => {
     const pad = (n: number) => String(n).padStart(2, "0");
     const expected = `${local.getFullYear()}-${pad(local.getMonth() + 1)}-${pad(local.getDate())} ${pad(local.getHours())}:${pad(local.getMinutes())}`;
     expect(formatNotesFile({ file: "/r/a.mp4", startedAt }, "body")).toContain(`- Started: ${expected}\n`);
+  });
+});
+
+describe("extractTitle", () => {
+  test("extracts multiline and colon titles", () => {
+    expect(extractTitle("## Title\nProject Plan\n## Summary")).toBe("Project Plan");
+    expect(extractTitle("## Title: Team Sync\n## Summary")).toBe("Team Sync");
+  });
+
+  test("returns undefined when Title is missing or nothing found", () => {
+    expect(extractTitle("## Summary\nNo title here")).toBeUndefined();
+    expect(extractTitle("## Title\nnothing found\n## Summary")).toBeUndefined();
   });
 });
 

@@ -67,6 +67,7 @@ export function createStartCommand(deps: StartDeps = realDeps): Command {
     const selection = wantsSelection ? selectionForStart(values, deps.runner, deps.ensureHelper(deps.runner, CAPTURE)) : undefined;
     const state = await deps.start({
       out: values.out,
+      ...(values.name !== undefined ? { name: values.name } : {}),
       screen: optionalNumber(values.screen),
       fps: optionalNumber(values.fps),
       mic: values["no-mic"] ? false : optionalNumber(values.mic),

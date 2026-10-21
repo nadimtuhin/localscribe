@@ -9,6 +9,7 @@ export interface PluginOptions {
   role?: "candidate" | "interviewer" | "meeting"; // --role, set with --live
   contextFiles?: string[]; // --context paths, absolute, set with --live
   lang?: string; // --lang as a whisper code or "auto"; "en" when unset
+  name?: string; // --name param; conversation name
 }
 
 export interface PluginContext {
@@ -36,5 +37,5 @@ export interface RecorderPlugin {
   name: string;
   enabled(options: PluginOptions): boolean;
   start?(ctx: StartedContext): Promise<unknown>;
-  stop?(ctx: StoppedContext): Promise<void>;
+  stop?(ctx: StoppedContext): Promise<unknown>;
 }

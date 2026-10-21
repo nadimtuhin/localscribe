@@ -74,6 +74,7 @@ const readLog = async (logFile: string) => (await Bun.file(logFile).text()).trim
 
 export interface StartOptions {
   out?: string;
+  name?: string;
   screen?: number;
   fps?: number;
   mic?: number | false; // device index, or false to skip
@@ -108,7 +109,7 @@ export async function start(opts: StartOptions = {}, injected: Partial<RecorderD
     micDevice = mic.device;
   }
 
-  const file = withMp4Extension(resolve(opts.out ?? join(defaultRecordingsDir(), timestampedFilename(new Date()))));
+  const file = withMp4Extension(resolve(opts.out ?? join(defaultRecordingsDir(), timestampedFilename(new Date(), opts.name))));
   const recordsSystemAudio = opts.systemAudio !== false;
   const partsBase = file.replace(/\.mp4$/, "");
   const videoFile = recordsSystemAudio || engine === "sck" ? `${partsBase}.video.mp4` : file;
@@ -148,7 +149,7 @@ export async function start(opts: StartOptions = {}, injected: Partial<RecorderD
   }
 
   // Save state before waiting, so an interrupted `start` can still be stopped.
-  const pluginOptions = opts.plugins ?? {};
+  const pluginOptions = { ...opts.plugins, ...(opts.name !== undefined ? { name: opts.name } : {}) };
   const state: RecordingState = { ...engineState, file, videoFile, startedAt: new Date().toISOString(), pluginOptions };
   writeState(statePath, state);
 
@@ -270,8 +271,9 @@ export async function stop(injected: Partial<RecorderDeps> = {}): Promise<StopRe
     }
   }
 
+  let finalFile = state.file;
   if (!mixError && existsSync(state.file)) {
-    await runStopHooks(plugins, {
+    const outcome = await runStopHooks(plugins, {
       base: state.file.replace(/\.mp4$/, ""),
       options: state.pluginOptions ?? {},
       file: state.file,
@@ -280,9 +282,10 @@ export async function stop(injected: Partial<RecorderDeps> = {}): Promise<StopRe
       pluginStates: state.plugins ?? {},
       log: printLine,
     });
+    if (outcome?.file && existsSync(outcome.file)) finalFile = outcome.file;
   }
 
-  return { file: state.file, durationMs, bytes: Bun.file(state.file).size, forced, keptParts, mixError };
+  return { file: finalFile, durationMs, bytes: Bun.file(finalFile).size, forced, keptParts, mixError };
 }
 
 export interface RecordingFile { name: string; path: string; bytes: number; modified: Date }

@@ -15,7 +15,7 @@ export const createNotesCommand = (run: HermesRun, log: (line: string) => void):
   const base = baseOf(path);
   let startedAt = new Date().toISOString();
   try { startedAt = statSync(`${base}.transcript.md`).mtime.toISOString(); } catch { /* missing transcript is reported by generateNotes */ }
-  await generateAndReport(base, { file: `${base}.mp4`, startedAt, lang }, log, run);
+  await generateAndReport(base, { file: `${base}.mp4`, startedAt, lang, name: values.name }, log, run);
   return 0;
 };
 

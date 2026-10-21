@@ -17,10 +17,11 @@ struct LocalscribeBarApp: App {
         MenuBarExtra {
             MenuView(model: model)
         } label: {
-            if model.status.isRecording {
-                Text("REC \(model.status.elapsedText)")
-            } else {
-                Image(systemName: "record.circle")
+            HStack(spacing: 4) {
+                Image(systemName: model.status.isRecording && model.isFlashing ? "record.circle.fill" : "record.circle")
+                if model.status.isRecording {
+                    Text("REC \(model.status.elapsedText)")
+                }
             }
         }
         .menuBarExtraStyle(.menu)
@@ -33,9 +34,13 @@ struct MenuView: View {
     var body: some View {
         Text(model.statusLine)
         if model.status.isRecording {
-            Button("Stop") { Task { await model.stop() } }.disabled(model.busy)
+            Button("Stop Recording") { Task { await model.stop() } }.disabled(model.busy)
         } else {
-            Button("Start") { Task { await model.start() } }.disabled(model.busy)
+            Button("Start Recording") { Task { await model.start() } }.disabled(model.busy)
+        }
+        Divider()
+        Button(model.options.name.isEmpty ? "Name: (Auto-summarize)" : "Name: \(model.options.name)") {
+            model.promptForName()
         }
         Divider()
         Picker("Screen / window / area", selection: $model.options.source) {

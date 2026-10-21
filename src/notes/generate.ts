@@ -1,9 +1,10 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join } from "node:path";
+import { renameRecordingFiles, slugify, uniqueBase } from "../paths.ts";
 import { lastClockMs } from "../live/prompt.ts";
 import { keepValidStamps } from "./stamps.ts";
-import { buildHermesArgs, buildNotesPrompt, formatNotesFile, type NotesMeta } from "./prompt.ts";
+import { buildHermesArgs, buildNotesPrompt, extractTitle, formatNotesFile, type NotesMeta } from "./prompt.ts";
 
 export const HERMES_TIMEOUT_MS = 120_000;
 
@@ -11,7 +12,7 @@ export interface HermesResult { exitCode: number; stdout: string; stderr: string
 // The seam tests fake: runs the argv in `cwd`, killing it after `timeoutMs`.
 export type HermesRun = (args: string[], cwd: string, timeoutMs: number) => Promise<HermesResult>;
 
-export interface NotesResult { written: boolean; message: string }
+export interface NotesResult { written: boolean; message: string; file?: string }
 
 export const realHermesRun: HermesRun = async (args, cwd, timeoutMs) => {
   const [command = "hermes", ...rest] = args;
@@ -47,9 +48,25 @@ export async function generateNotes(base: string, meta: NotesMeta, run: HermesRu
     if (result.timedOut) return skipped(`notes: hermes timed out after ${HERMES_TIMEOUT_MS / 1000}s`);
     if (result.exitCode !== 0) return skipped(`notes: hermes failed (exit ${result.exitCode}): ${result.stderr.trim().split("\n")[0] ?? ""}`);
     if (!result.stdout.trim()) return skipped("notes: hermes returned nothing");
+
+    const title = meta.name ?? extractTitle(result.stdout);
+    let finalBase = base;
+    if (title) {
+      const slug = slugify(title);
+      if (slug) {
+        const targetBase = uniqueBase(base, slug, Boolean(meta.name));
+        if (targetBase !== base) {
+          renameRecordingFiles(base, targetBase);
+          finalBase = targetBase;
+        }
+      }
+    }
+
+    const finalNotesPath = `${finalBase}.notes.md`;
+    const finalMeta: NotesMeta = finalBase !== base ? { ...meta, file: `${finalBase}.mp4`, title } : { ...meta, title };
     const limitMs = meta.durationMs ?? lastClockMs(transcript);
-    writeFileSync(notesPath, formatNotesFile(meta, keepValidStamps(result.stdout, limitMs)), { flag: "wx" });
-    return { written: true, message: `notes: wrote ${notesPath}` };
+    writeFileSync(finalNotesPath, formatNotesFile(finalMeta, keepValidStamps(result.stdout, limitMs)), { flag: "wx" });
+    return { written: true, message: `notes: wrote ${finalNotesPath}`, file: `${finalBase}.mp4` };
   } catch (error) {
     return skipped(`notes: ${error instanceof Error ? error.message : String(error)}`);
   } finally {

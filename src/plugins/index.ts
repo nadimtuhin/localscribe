@@ -7,7 +7,7 @@ import { requireWhisperModel } from "../transcription/core.ts";
 import { DEFAULT_LANGUAGE, parseLanguage } from "../transcription/language.ts";
 import type { PluginContext, PluginOptions, RecorderPlugin, StartedContext } from "./types.ts";
 
-export interface PluginFlags { transcribe?: boolean; draw?: boolean; live?: boolean; notes?: boolean; "no-system-audio"?: boolean; role?: string; context?: string[]; lang?: string }
+export interface PluginFlags { transcribe?: boolean; draw?: boolean; live?: boolean; notes?: boolean; "no-system-audio"?: boolean; role?: string; context?: string[]; lang?: string; name?: string }
 
 // Live captions and notes are both built on the final transcript, so they turn it on.
 // --live also implies notes: the speaker-labelled live transcript is what they summarise.
@@ -22,6 +22,7 @@ export function pluginOptionsFromFlags(flags: PluginFlags): PluginOptions {
     systemAudio: flags["no-system-audio"] !== true,
     draw: flags.draw === true,
     lang: parseLanguage(flags.lang ?? DEFAULT_LANGUAGE),
+    ...(flags.name !== undefined ? { name: flags.name } : {}),
     ...(liveCaptions ? liveOptionsFromFlags(flags) : {}),
   };
 }
@@ -54,16 +55,21 @@ export interface StopHooksContext extends PluginContext {
 }
 
 // A failing plugin is reported and skipped; it never fails the recording.
-export async function runStopHooks(registry: RecorderPlugin[], ctx: StopHooksContext): Promise<void> {
+export async function runStopHooks(registry: RecorderPlugin[], ctx: StopHooksContext): Promise<{ file: string }> {
   const { pluginStates, ...shared } = ctx;
+  let currentFile = ctx.file;
   for (const plugin of registry) {
     if (!plugin.enabled(ctx.options) || !plugin.stop) continue;
     try {
-      await plugin.stop({ ...shared, pluginState: pluginStates[plugin.name] });
+      const result = await plugin.stop({ ...shared, file: currentFile, base: currentFile.replace(/\.mp4$/, ""), pluginState: pluginStates[plugin.name] });
+      if (typeof result === "object" && result !== null && "file" in result && typeof (result as { file: unknown }).file === "string") {
+        currentFile = (result as { file: string }).file;
+      }
     } catch (error) {
       ctx.log(`${plugin.name}: ${errorMessage(error)}`);
     }
   }
+  return { file: currentFile };
 }
 
 // Transcription runs only after the recording, so a missing model would otherwise be found too late.

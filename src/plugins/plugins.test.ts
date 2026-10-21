@@ -65,12 +65,30 @@ describe("runStopHooks", () => {
     expect(lines).toEqual(["broken: no whisper"]);
     expect(calls).toEqual(["ok:stop:undefined"]);
   });
+
+  test("updates file when a stop hook returns an updated file", async () => {
+    const renamer: RecorderPlugin = {
+      name: "renamer",
+      enabled: () => true,
+      stop: async () => ({ file: "/r/renamed.mp4" }),
+    };
+    const follower: RecorderPlugin = {
+      name: "follower",
+      enabled: () => true,
+      stop: async (ctx) => { expect(ctx.file).toBe("/r/renamed.mp4"); },
+    };
+    const outcome = await runStopHooks([renamer, follower], { ...baseContext(), file: "/r/demo.mp4", startedAt: "2026-10-14T10:00:00.000Z", durationMs: 1000, pluginStates: {} });
+    expect(outcome).toEqual({ file: "/r/renamed.mp4" });
+  });
 });
 
 describe("pluginOptionsFromFlags", () => {
   test("nothing enabled by default", () => {
     expect(pluginOptionsFromFlags({})).toEqual({ transcribe: false, liveCaptions: false, notes: false, systemAudio: true, draw: false, lang: "en" });
     expect(pluginOptionsFromFlags({ "no-system-audio": true }).systemAudio).toBe(false);
+  });
+  test("preserves name when given", () => {
+    expect(pluginOptionsFromFlags({ name: "Standup" }).name).toBe("Standup");
   });
   test("--live and --notes both need a transcript", () => {
     expect(pluginOptionsFromFlags({ live: true }).transcribe).toBe(true);

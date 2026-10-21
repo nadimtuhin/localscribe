@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LOCALSCRIBE — Local Screen Recorder & Meeting Intelligence for macOS</title>
+  <meta name="description" content="Local-first screen recording, live whisper transcription, AI meeting notes with Hermes, and menu bar companion. Zero cloud leaks.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F9F6F0;
+      --card-bg: #FFFFFF;
+      --ink: #111111;
+      --muted: #555555;
+      --border: #111111;
+      --yellow: #FFDE00;
+      --orange: #FF5500;
+      --cyan: #00E5FF;
+      --lime: #00E676;
+      --pink: #FF3366;
+      --shadow-sm: 3px 3px 0px #111111;
+      --shadow: 5px 5px 0px #111111;
+      --shadow-lg: 8px 8px 0px #111111;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--ink);
+      font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+      line-height: 1.5;
+      font-size: 16px;
+      overflow-x: hidden;
+      border-top: 6px solid var(--ink);
+    }
+
+    code, pre, .mono {
+      font-family: 'Space Mono', monospace;
+    }
+
+    .container {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Brutalist Header */
+    header {
+      padding: 24px 0 20px;
+      border-bottom: 3px solid var(--border);
+      background: var(--bg);
+    }
+
+    .nav-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--ink);
+      color: var(--yellow);
+      padding: 8px 16px;
+      font-weight: 900;
+      font-size: 22px;
+      letter-spacing: -0.5px;
+      text-decoration: none;
+      box-shadow: var(--shadow-sm);
+      border: 2px solid var(--ink);
+    }
+
+    .rec-dot {
+      width: 14px;
+      height: 14px;
+      background-color: var(--pink);
+      border-radius: 50%;
+      border: 2px solid #fff;
+      display: inline-block;
+      animation: flash 1s infinite;
+    }
+
+    @keyframes flash {
+      0%, 49% { opacity: 1; transform: scale(1); }
+      50%, 100% { opacity: 0.2; transform: scale(0.9); }
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      font-weight: 700;
+      font-size: 14px;
+      text-decoration: none;
+      color: var(--ink);
+      background: var(--card-bg);
+      border: 3px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: all 0.1s ease;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: var(--shadow);
+    }
+
+    .btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0px var(--border);
+    }
+
+    .btn-primary {
+      background: var(--yellow);
+    }
+
+    .btn-orange {
+      background: var(--orange);
+      color: #fff;
+    }
+
+    .btn-lime {
+      background: var(--lime);
+    }
+
+    /* Hero */
+    .hero {
+      padding: 60px 0 50px;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 40px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .kicker {
+      display: inline-block;
+      background: var(--lime);
+      border: 2px solid var(--border);
+      padding: 4px 10px;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 16px;
+      box-shadow: 2px 2px 0px var(--border);
+    }
+
+    h1 {
+      font-size: clamp(38px, 6vw, 68px);
+      line-height: 1.02;
+      font-weight: 900;
+      letter-spacing: -1.5px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+
+    h1 span.highlight {
+      background: var(--yellow);
+      padding: 0 4px;
+      border: 3px solid var(--border);
+      display: inline-block;
+      box-shadow: 3px 3px 0px var(--border);
+    }
+
+    .lead {
+      font-size: 20px;
+      font-weight: 500;
+      color: #222;
+      margin-bottom: 28px;
+      max-width: 580px;
+    }
+
+    /* Install Bar */
+    .install-box {
+      background: var(--card-bg);
+      border: 3px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .install-command {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--ink);
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .copy-btn {
+      background: var(--cyan);
+      border: 2px solid var(--border);
+      box-shadow: 2px 2px 0px var(--border);
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      text-transform: uppercase;
+    }
+
+    .copy-btn:hover {
+      background: var(--yellow);
+    }
+
+    .badges-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .pill {
+      border: 2px solid var(--border);
+      background: var(--card-bg);
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: 'Space Mono', monospace;
+      box-shadow: 2px 2px 0px var(--border);
+    }
+
+    /* Terminal Window Box */
+    .terminal-card {
+      background: #0D0F12;
+      color: #F0F6FC;
+      border: 3px solid var(--border);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .term-header {
+      background: #1B1F27;
+      border-bottom: 2px solid #2D333B;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .term-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .term-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,0,0,0.4);
+    }
+
+    .term-dot.r { background: #FF5F56; }
+    .term-dot.y { background: #FFBD2E; }
+    .term-dot.g { background: #27C93F; }
+
+    .term-title {
+      font-size: 12px;
+      color: #8B949E;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+    }
+
+    .term-tabs {
+      display: flex;
+      background: #161B22;
+      border-bottom: 2px solid #2D333B;
+    }
+
+    .term-tab {
+      padding: 8px 14px;
+      font-size: 12px;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      color: #8B949E;
+      background: transparent;
+      border: none;
+      border-right: 1px solid #2D333B;
+      cursor: pointer;
+    }
+
+    .term-tab.active {
+      color: #58A6FF;
+      background: #0D0F12;
+      border-bottom: 2px solid #58A6FF;
+    }
+
+    .term-body {
+      padding: 18px;
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      max-height: 480px;
+      overflow-y: auto;
+    }
+
+    .prompt { color: #58A6FF; }
+    .cmd { color: #F0F6FC; font-weight: 700; }
+    .dim { color: #8B949E; }
+    .green { color: #3FB950; font-weight: 700; }
+    .yellow { color: #D29922; font-weight: 700; }
+    .pink { color: #F778BA; }
+    .cyan { color: #79C0FF; }
+    .white { color: #FFFFFF; }
+
+    /* Key Spec Ticker */
+    .ticker-band {
+      background: var(--yellow);
+      border-top: 3px solid var(--border);
+      border-bottom: 3px solid var(--border);
+      padding: 14px 0;
+      font-weight: 900;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+
+    .ticker-content {
+      display: inline-block;
+      animation: ticker 25s linear infinite;
+    }
+
+    @keyframes ticker {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* Section Headers */
+    .section-title-wrap {
+      margin-bottom: 36px;
+    }
+
+    .section-tag {
+      display: inline-block;
+      background: var(--cyan);
+      border: 2px solid var(--border);
+      box-shadow: 2px 2px 0px var(--border);
+      font-size: 12px;
+      font-weight: 900;
+      padding: 4px 10px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    h2 {
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -1px;
+    }
+
+    /* Grid of Features */
+    .features-section {
+      padding: 70px 0;
+      border-bottom: 3px solid var(--border);
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 3px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      position: relative;
+    }
+
+    .card-num {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      font-size: 13px;
+      font-weight: 900;
+      background: var(--bg);
+      border: 2px solid var(--border);
+      padding: 2px 8px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .card h3 {
+      font-size: 20px;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      padding-right: 40px;
+    }
+
+    .card p {
+      color: #333;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+
+    .card-footer {
+      border-top: 2px dashed #ddd;
+      padding-top: 12px;
+      font-size: 12px;
+      font-family: 'Space Mono', monospace;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    /* Menu Bar App Showcase */
+    .bar-showcase {
+      padding: 70px 0;
+      background: #FFFFFF;
+      border-bottom: 3px solid var(--border);
+    }
+
+    .bar-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      align-items: center;
+    }
+
+    @media (max-width: 860px) {
+      .bar-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .mock-menubar {
+      background: #252830;
+      border: 3px solid var(--border);
+      box-shadow: var(--shadow-lg);
+      padding: 12px 18px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 16px;
+      color: #fff;
+      font-family: -apple-system, system-ui, sans-serif;
+      font-size: 13px;
+    }
+
+    .mock-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #3B4048;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .mock-dropdown {
+      background: #FFFFFF;
+      border: 3px solid var(--border);
+      box-shadow: var(--shadow-lg);
+      margin-top: 12px;
+      padding: 12px 0;
+      font-size: 13px;
+    }
+
+    .mock-row {
+      padding: 6px 18px;
+      display: flex;
+      justify-content: space-between;
+      color: #222;
+      font-weight: 600;
+    }
+
+    .mock-row:hover {
+      background: var(--yellow);
+    }
+
+    .mock-row.dim {
+      color: #888;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .mock-divider {
+      height: 1px;
+      background: #eee;
+      margin: 6px 0;
+    }
+
+    /* Commands Table */
+    .cli-section {
+      padding: 70px 0;
+      border-bottom: 3px solid var(--border);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 3px solid var(--border);
+      box-shadow: var(--shadow);
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background: var(--ink);
+      color: #fff;
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      padding: 14px 18px;
+      text-transform: uppercase;
+    }
+
+    td {
+      padding: 14px 18px;
+      border-bottom: 1px solid #ddd;
+      font-size: 14px;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: #FFFDF0;
+    }
+
+    td code {
+      background: #f0f0f0;
+      padding: 2px 6px;
+      border: 1px solid #ccc;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    /* Architecture Block */
+    .arch-section {
+      padding: 70px 0;
+    }
+
+    .arch-box {
+      background: var(--card-bg);
+      border: 3px solid var(--border);
+      box-shadow: var(--shadow-lg);
+      padding: 30px;
+    }
+
+    .arch-ascii {
+      background: #111;
+      color: #00F0FF;
+      padding: 24px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.4;
+      border: 2px solid var(--border);
+    }
+
+    /* Footer */
+    footer {
+      border-top: 3px solid var(--border);
+      background: var(--ink);
+      color: #fff;
+      padding: 40px 0 50px;
+    }
+
+    footer a {
+      color: var(--yellow);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    .footer-grid {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top bar -->
+  <header>
+    <div class="container nav-row">
+      <a href="#" class="logo-badge">
+        <span class="rec-dot"></span>
+        LOCALSCRIBE
+      </a>
+      <div class="nav-links">
+        <a href="#features" class="btn">Features</a>
+        <a href="#menubar" class="btn">Menu-Bar App</a>
+        <a href="#cli" class="btn">CLI Cheat Sheet</a>
+        <a href="https://github.com/nadimtuhin/localscribe" target="_blank" class="btn btn-primary">GitHub ↗</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <div class="kicker">⚡ 100% Local macOS Intelligence</div>
+        <h1>
+          Screen recording that <span class="highlight">actually transcribes</span> and writes meeting notes.
+        </h1>
+        <p class="lead">
+          Native ScreenCaptureKit engine. Lossless system audio + microphone capture. Local Whisper transcription. Realtime live assist HUD. Zero cloud leaks.
+        </p>
+
+        <!-- Install command -->
+        <div class="install-box">
+          <div class="install-command">
+            <span class="prompt">$</span> <span class="cmd">npm install -g localscribe</span>
+          </div>
+          <button class="copy-btn" onclick="copyInstall(this)">Copy</button>
+        </div>
+
+        <div class="badges-row">
+          <span class="pill">macOS 13+ Sonoma / Sequoia</span>
+          <span class="pill">Apple Silicon & Intel</span>
+          <span class="pill">Bun + Swift + FFmpeg</span>
+          <span class="pill">100% Test Coverage</span>
+        </div>
+      </div>
+
+      <!-- Live Terminal Interactive Preview -->
+      <div class="terminal-card">
+        <div class="term-header">
+          <div class="term-dots">
+            <div class="term-dot r"></div>
+            <div class="term-dot y"></div>
+            <div class="term-dot g"></div>
+          </div>
+          <div class="term-title">terminal — 80x24</div>
+          <div class="mono" style="font-size:10px; color:#58A6FF;">v0.1.0</div>
+        </div>
+
+        <div class="term-tabs">
+          <button class="term-tab active" onclick="switchTab(0)">Start Record</button>
+          <button class="term-tab" onclick="switchTab(1)">Live Assist TUI</button>
+          <button class="term-tab" onclick="switchTab(2)">AI Notes Output</button>
+        </div>
+
+        <div id="tab-0" class="term-body">
+          <p><span class="prompt">~ $</span> <span class="cmd">localscribe start --name "Q4 Architecture Sync" --live --notes</span></p>
+          <p class="dim">building capture helper... done</p>
+          <p class="green">recording -> 2026-10-21_14-30-00_q4-architecture-sync.mp4</p>
+          <p class="dim">stop with: localscribe stop</p>
+          <p class="cyan">live assist: opened in foreground HUD [TUI active]</p>
+          <br>
+          <p class="dim">[14:30:05] sysaudio attached</p>
+          <p class="dim">[14:30:06] microphone channel 0 linked</p>
+          <p class="dim">[14:30:08] whisper live segmenter: ggml-base.en active</p>
+          <p class="yellow">⚡ Status: Recording 2026-10-21_14-30-00_q4-architecture-sync (0m15s)</p>
+        </div>
+
+        <div id="tab-1" class="term-body" style="display:none;">
+          <p class="cyan">═══ LOCALSCRIBE LIVE ASSIST [ROLE: MEETING] ═══</p>
+          <br>
+          <p><span class="yellow">[00:12] them:</span> Should we run the database migration during off-peak?</p>
+          <p><span class="green">[00:16] me:</span> Yes, Sunday 2 AM UTC gives us a 3-hour quiet window.</p>
+          <p><span class="yellow">[00:25] them:</span> Who takes point on the rollback procedure?</p>
+          <br>
+          <p class="pink">── Suggestions (Hermes) ─────────────────────────</p>
+          <p class="white"> • Point out staging dry-run completed yesterday at 240ms latency</p>
+          <p class="white"> • Confirm secondary replica failover verified with zero data loss</p>
+          <br>
+          <p class="dim">Type ?question to ask Hermes inline, or plain note to stamp</p>
+          <p><span class="prompt">?</span> <span class="cmd">what was our replica lag during stress test?</span></p>
+        </div>
+
+        <div id="tab-2" class="term-body" style="display:none;">
+          <p class="green"># Notes: Q4 Architecture Sync</p>
+          <br>
+          <p class="dim">- Started: 2026-10-21 14:30</p>
+          <p class="dim">- Duration: 24m10s</p>
+          <br>
+          <p class="yellow">## Summary</p>
+          <p class="white">Agreed on off-peak Sunday migration timeline. Zero-downtime cutover validated on staging.</p>
+          <br>
+          <p class="yellow">## Decisions</p>
+          <p class="white">- [00:16] Cutover window scheduled for Sunday 2 AM UTC</p>
+          <p class="white">- [04:45] Dual-write buffer TTL raised to 600 seconds</p>
+          <br>
+          <p class="yellow">## Action items</p>
+          <p class="cyan">- [ ] [00:25] Verify secondary replica automated promotion</p>
+          <p class="cyan">- [ ] [12:40] Send migration checklist to stakeholder channel</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Marquee Ticker -->
+  <div class="ticker-band">
+    <div class="ticker-content">
+      SCREENCAPTUREKIT ✦ ZERO VIRTUAL AUDIO DRIVERS ✦ LOSSLESS SYSTEM AUDIO ✦ LOCAL WHISPER TRANSCRIPTION ✦ HERMES AI MEETING NOTES ✦ BANGLA / MULTILINGUAL WHISPER ✦ LIVE TUI HUD ✦ SCREEN ANNOTATION ✦ NATIVE SWIFT MENU-BAR APP ✦
+      SCREENCAPTUREKIT ✦ ZERO VIRTUAL AUDIO DRIVERS ✦ LOSSLESS SYSTEM AUDIO ✦ LOCAL WHISPER TRANSCRIPTION ✦ HERMES AI MEETING NOTES ✦ BANGLA / MULTILINGUAL WHISPER ✦ LIVE TUI HUD ✦ SCREEN ANNOTATION ✦ NATIVE SWIFT MENU-BAR APP ✦
+    </div>
+  </div>
+
+  <!-- Features Grid -->
+  <section id="features" class="features-section">
+    <div class="container">
+      <div class="section-title-wrap">
+        <span class="section-tag">Capabilities</span>
+        <h2>Engineered for Deep Technical Work</h2>
+      </div>
+
+      <div class="features-grid">
+        <div class="card">
+          <div class="card-num">01</div>
+          <h3>ScreenCaptureKit Engine</h3>
+          <p>Native macOS ScreenCaptureKit capture. Record full displays, individual windows by title or app, or interactively drag-to-select regions on screen.</p>
+          <div class="card-footer">--window &lt;id|name&gt; · --area pick · --display N</div>
+        </div>
+
+        <div class="card">
+          <div class="card-num">02</div>
+          <h3>Lossless System Audio + Mic</h3>
+          <p>No BlackHole. No Soundflower. No kernel extensions. Localscribe taps the ScreenCaptureKit system audio stream directly and isolates mic audio on separate tracks.</p>
+          <div class="card-footer">Auto-muxed to clean AAC MP4 with FFmpeg</div>
+        </div>
+
+        <div class="card">
+          <div class="card-num">03</div>
+          <h3>Local Whisper Transcription</h3>
+          <p>Powered by local whisper.cpp. Automatically parses language or runs Bangla with large-v3-turbo, Hindi, Urdu, Spanish, Arabic, or English base.</p>
+          <div class="card-footer">--transcribe · --lang bangla · --lang auto</div>
+        </div>
+
+        <div class="card">
+          <div class="card-num">04</div>
+          <h3>Live Assist TUI HUD</h3>
+          <p>A dual-speaker realtime terminal feed while recording. Distinguishes who spoke (me vs them). Ask Hermes questions in real time with <code>?question</code>.</p>
+          <div class="card-footer">localscribe live · --role candidate|interviewer|meeting</div>
+        </div>
+
+        <div class="card">
+          <div class="card-num">05</div>
+          <h3>Timestamped AI Notes</h3>
+          <p>Hermes turns messy conversation transcripts into structured notes: Summary, Key Points, Decisions, and Action Items stamped with transcript clock <code>[mm:ss]</code>.</p>
+          <div class="card-footer">--notes · Auto-summarized conversation slugs</div>
+        </div>
+
+        <div class="card">
+          <div class="card-num">06</div>
+          <h3>Screen Annotation Overlay</h3>
+          <p>Draw directly over the screen during presentations or reviews. Native transparent Metal-backed canvas spawns as a sidecar process.</p>
+          <div class="card-footer">--draw · Cleans up on stop automatically</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Menu Bar Section -->
+  <section id="menubar" class="bar-showcase">
+    <div class="container bar-grid">
+      <div>
+        <span class="section-tag">Menu Bar Companion</span>
+        <h2>LocalscribeBar in Pure Swift</h2>
+        <p class="lead" style="font-size:16px;">
+          Control recordings straight from your macOS menu bar without touching the terminal. Includes live flashing status dot, elapsed timer, audio picker, and conversation naming.
+        </p>
+
+        <ul style="list-style: none; margin-bottom: 24px;">
+          <li style="margin-bottom: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            <span style="background:var(--pink); width:12px; height:12px; border-radius:50%; display:inline-block;"></span>
+            Flashing recording indicator (500ms cadence)
+          </li>
+          <li style="margin-bottom: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            <span style="background:var(--yellow); width:12px; height:12px; border:2px solid #000; display:inline-block;"></span>
+            One-tap Start / Stop recording with elapsed clock
+          </li>
+          <li style="margin-bottom: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            <span style="background:var(--cyan); width:12px; height:12px; border:2px solid #000; display:inline-block;"></span>
+            Set conversation name or let Hermes auto-name it
+          </li>
+          <li style="margin-bottom: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            <span style="background:var(--lime); width:12px; height:12px; border:2px solid #000; display:inline-block;"></span>
+            Toggles for Live assist, Transcribe, Notes & Screen draw
+          </li>
+        </ul>
+
+        <div style="background: var(--bg); border: 3px solid var(--border); box-shadow: var(--shadow-sm); padding: 16px;">
+          <div class="mono" style="font-size: 13px; font-weight: 700;">
+            $ bun run bar
+          </div>
+          <div class="dim" style="font-size: 11px; margin-top: 4px;">
+            Compiles LocalscribeBar with swiftc release optimizations
+          </div>
+        </div>
+      </div>
+
+      <!-- Menu UI Mockup -->
+      <div>
+        <div class="mock-menubar">
+          <span>Wi-Fi</span>
+          <span>100%</span>
+          <div class="mock-menu-item">
+            <span class="rec-dot"></span>
+            <span>REC 02m15s</span>
+          </div>
+          <span>Wed 2:30 PM</span>
+        </div>
+
+        <div class="mock-dropdown">
+          <div class="mock-row dim">Recording Active</div>
+          <div class="mock-row" style="color:var(--pink); font-weight:900;">
+            <span>Stop Recording</span>
+            <span class="mono">⌘.</span>
+          </div>
+          <div class="mock-divider"></div>
+          <div class="mock-row">
+            <span>Name: Q4 Architecture Sync</span>
+            <span class="dim">✏️</span>
+          </div>
+          <div class="mock-divider"></div>
+          <div class="mock-row">
+            <span>Source: Built-in Display (1512x982)</span>
+            <span>✓</span>
+          </div>
+          <div class="mock-row">
+            <span>Microphone: MacBook Pro Mic</span>
+            <span>✓</span>
+          </div>
+          <div class="mock-row">
+            <span>System Audio</span>
+            <span>ON</span>
+          </div>
+          <div class="mock-divider"></div>
+          <div class="mock-row">
+            <span>Transcribe (whisper.cpp)</span>
+            <span>ON</span>
+          </div>
+          <div class="mock-row">
+            <span>Notes (Hermes AI)</span>
+            <span>ON</span>
+          </div>
+          <div class="mock-row">
+            <span>Live Assist HUD</span>
+            <span>ON</span>
+          </div>
+          <div class="mock-row">
+            <span>Language: English</span>
+            <span class="dim">en</span>
+          </div>
+          <div class="mock-divider"></div>
+          <div class="mock-row">
+            <span>Open recordings folder</span>
+            <span class="mono">~/Movies/localscribe</span>
+          </div>
+          <div class="mock-row">
+            <span>Show last notes</span>
+            <span class="mono">.notes.md</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLI Reference -->
+  <section id="cli" class="cli-section">
+    <div class="container">
+      <div class="section-title-wrap">
+        <span class="section-tag">Reference</span>
+        <h2>CLI Command Arsenal</h2>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Command</th>
+              <th>Options</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>localscribe start</code></td>
+              <td><code>--name, --out, --live, --notes, --transcribe, --draw, --lang</code></td>
+              <td>Starts recording screen + system sound + mic. Opens live TUI or detaches with <code>-d</code>.</td>
+            </tr>
+            <tr>
+              <td><code>localscribe stop</code></td>
+              <td><code>(none)</code></td>
+              <td>Stops the active recording session, runs stop hooks (Whisper transcription & Hermes notes).</td>
+            </tr>
+            <tr>
+              <td><code>localscribe status</code></td>
+              <td><code>--json</code></td>
+              <td>Checks whether recording is active, returns file path, start timestamp, and elapsed time.</td>
+            </tr>
+            <tr>
+              <td><code>localscribe live</code></td>
+              <td><code>--role &lt;role&gt;, --context &lt;file&gt;</code></td>
+              <td>Re-attaches the realtime interactive TUI HUD to a detached background recording.</td>
+            </tr>
+            <tr>
+              <td><code>localscribe captions</code></td>
+              <td><code>(none)</code></td>
+              <td>Streams live speaker-attributed transcription text lines to standard output.</td>
+            </tr>
+            <tr>
+              <td><code>localscribe notes &lt;file&gt;</code></td>
+              <td><code>--lang &lt;language&gt;, --name &lt;name&gt;</code></td>
+              <td>Regenerates structured AI meeting notes from an existing recording or transcript.</td>
+            </tr>
+            <tr>
+              <td><code>localscribe devices</code></td>
+              <td><code>--json</code></td>
+              <td>Lists all connected displays, active macOS windows, and available microphones.</td>
+            </tr>
+            <tr>
+              <td><code>localscribe list</code></td>
+              <td><code>(none)</code></td>
+              <td>Lists all finalized video recordings in <code>~/Movies/localscribe</code> sorted newest first.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture -->
+  <section class="arch-section">
+    <div class="container">
+      <div class="section-title-wrap">
+        <span class="section-tag">Internals</span>
+        <h2>Zero-Surprise Architecture</h2>
+      </div>
+
+      <div class="arch-box">
+        <pre class="arch-ascii">
+┌────────────────────────────────────────────────────────────────────────┐
+│                          LOCALSCRIBE CLI                               │
+│              (TypeScript + Bun Runtime / Process Runner)               │
+└────────────────────────────────────┬───────────────────────────────────┘
+                                     │
+           ┌─────────────────────────┼─────────────────────────┐
+           ▼                         ▼                         ▼
+┌─────────────────────┐   ┌─────────────────────┐   ┌─────────────────────┐
+│  SCREEN CAPTURE     │   │    AUDIO ROUTING    │   │  WHISPER LIVE ENGINE│
+│  Native Swift (SCK) │   │  System Audio (SCK) │   │  ffmpeg 16k mono wav│
+│  Displays / Windows │   │  Mic Audio (ffmpeg) │   │  whisper.cpp worker │
+└──────────┬──────────┘   └──────────┬──────────┘   └──────────┬──────────┘
+           │                         │                         │
+           └─────────────────────────┼─────────────────────────┘
+                                     ▼
+                      ┌─────────────────────────────┐
+                      │    RECORDING COMPLETE       │
+                      │  ffmpeg AAC + H.264 Muxer   │
+                      └──────────────┬──────────────┘
+                                     ▼
+                      ┌─────────────────────────────┐
+                      │    HERMES NOTES ENGINE      │
+                      │  Hardened temp sandbox      │
+                      │  Delimited untrusted block  │
+                      │  Summary + Actions [mm:ss]  │
+                      └─────────────────────────────┘
+        </pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container footer-grid">
+      <div>
+        <div style="font-weight: 900; font-size: 18px; margin-bottom: 4px;">LOCALSCRIBE</div>
+        <p class="dim" style="font-size: 13px;">Created by <a href="https://nadimtuhin.com" target="_blank">Omar Faruque Tuhin (Nadim Tuhin)</a>. Licensed under MIT.</p>
+      </div>
+      <div>
+        <a href="https://github.com/nadimtuhin/localscribe" class="btn btn-primary" target="_blank">View on GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function copyInstall(btn) {
+      navigator.clipboard.writeText('npm install -g localscribe');
+      const original = btn.innerText;
+      btn.innerText = 'COPIED!';
+      btn.style.background = '#00E676';
+      setTimeout(() => {
+        btn.innerText = original;
+        btn.style.background = '';
+      }, 2000);
+    }
+
+    function switchTab(index) {
+      document.querySelectorAll('.term-tab').forEach((tab, i) => {
+        tab.classList.toggle('active', i === index);
+      });
+      for (let i = 0; i < 3; i++) {
+        const el = document.getElementById('tab-' + i);
+        if (el) el.style.display = i === index ? 'block' : 'none';
+      }
+    }
+  </script>
+</body>
+</html>

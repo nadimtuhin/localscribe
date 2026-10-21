@@ -2,7 +2,7 @@ import type { parseArgs } from "node:util";
 
 export const HELP = `localscribe - local screen recorder
 
-  localscribe start [--out file.mp4] [--screen N] [--fps 30] [--mic N] [--no-mic] [--no-system-audio]
+  localscribe start [--name <name>] [--out file.mp4] [--screen N] [--fps 30] [--mic N] [--no-mic] [--no-system-audio]
                    [--window <id|name>] [--area x,y,w,h] [--display N] [--engine sck|ffmpeg]
                    [--transcribe] [--live] [--notes] [--draw] [-d|--detach]
                    [--lang <language>]   (conversation language: english, bangla, hindi, urdu, arabic, spanish, ... or a code like hi, or auto; default en; Bangla uses ggml-large-v3-turbo-q5_0.bin, other non-English ggml-small.bin)
@@ -14,10 +14,11 @@ export const HELP = `localscribe - local screen recorder
   localscribe list
   localscribe devices [--json]
   localscribe captions
-  localscribe notes <mp4|transcript.md> [--lang <language>]`;
+  localscribe notes <mp4|transcript.md> [--lang <language>] [--name <name>]`;
 
 // One flag table for every command, so adding a flag never touches another command's file.
 export const cliOptions = {
+  name: { type: "string" },
   out: { type: "string" },
   screen: { type: "string" },
   fps: { type: "string" },

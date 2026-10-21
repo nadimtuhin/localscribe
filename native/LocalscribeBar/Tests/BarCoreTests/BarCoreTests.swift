@@ -6,6 +6,12 @@ final class StartArgumentsTests: XCTestCase {
         XCTAssertEqual(BarOptions().startArguments(), ["start", "-d"])
     }
 
+    func testNameArgument() {
+        var options = BarOptions()
+        options.name = "Sprint Retro"
+        XCTAssertEqual(options.startArguments(), ["start", "-d", "--name", "Sprint Retro"])
+    }
+
     func testVideoSources() {
         var options = BarOptions()
         options.source = .window(4242)

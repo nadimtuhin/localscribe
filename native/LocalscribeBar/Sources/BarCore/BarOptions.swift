@@ -22,6 +22,7 @@ public enum Role: String, CaseIterable {
 
 /// What the user picked in the menu; turns into `localscribe start` arguments.
 public struct BarOptions: Equatable {
+    public var name: String = ""
     public var source: VideoSource = .defaultDisplay
     public var mic: Microphone = .systemDefault
     public var systemAudio = true
@@ -36,6 +37,9 @@ public struct BarOptions: Equatable {
 
     public func startArguments() -> [String] {
         var args = ["start", "-d"]
+        if !name.isEmpty {
+            args += ["--name", name]
+        }
         switch source {
         case .defaultDisplay: break
         case .display(let id): args += ["--display", String(id)]

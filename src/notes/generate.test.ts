@@ -23,8 +23,36 @@ describe("generateNotes", () => {
   test("writes <base>.notes.md with header and hermes reply", async () => {
     withTranscript();
     const result = await generateNotes(base, meta(dir), ok());
-    expect(result).toEqual({ written: true, message: `notes: wrote ${base}.notes.md` });
+    expect(result).toEqual({ written: true, message: `notes: wrote ${base}.notes.md`, file: `${base}.mp4` });
     expect(readFileSync(`${base}.notes.md`, "utf8")).toBe(`# Notes: rec.mp4\n\n- Started: 2026-10-14 22:05\n- Duration: 2m15s\n\n${reply}\n`);
+  });
+
+  test("renames files when meta.name is provided", async () => {
+    withTranscript();
+    writeFileSync(`${base}.mp4`, "video");
+    const result = await generateNotes(base, { ...meta(dir), name: "Project Kickoff" }, ok());
+    const expectedBase = `${base}_project-kickoff`;
+    expect(result).toEqual({ written: true, message: `notes: wrote ${expectedBase}.notes.md`, file: `${expectedBase}.mp4` });
+    expect(existsSync(`${expectedBase}.mp4`)).toBe(true);
+    expect(existsSync(`${expectedBase}.transcript.md`)).toBe(true);
+    expect(existsSync(`${expectedBase}.notes.md`)).toBe(true);
+  });
+
+  test("renames files when Hermes returns a title", async () => {
+    withTranscript();
+    writeFileSync(`${base}.mp4`, "video");
+    const titleReply = "## Title\nSprint Planning\n\n## Summary\nA sync.";
+    const result = await generateNotes(base, meta(dir), ok(titleReply));
+    const expectedBase = `${base}_sprint-planning`;
+    expect(result).toEqual({ written: true, message: `notes: wrote ${expectedBase}.notes.md`, file: `${expectedBase}.mp4` });
+    expect(existsSync(`${expectedBase}.mp4`)).toBe(true);
+    expect(existsSync(`${expectedBase}.notes.md`)).toBe(true);
+  });
+
+  test("does not rename when title slug is empty or already in base", async () => {
+    withTranscript();
+    const result = await generateNotes(base, { ...meta(dir), name: "???" }, ok());
+    expect(result).toEqual({ written: true, message: `notes: wrote ${base}.notes.md`, file: `${base}.mp4` });
   });
 
   test("passes the fixture transcript to hermes inside a delimited block, with safety flags and a fresh cwd", async () => {
