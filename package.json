@@ -1,8 +1,43 @@
 {
   "name": "localscribe",
   "version": "0.1.0",
+  "description": "Local screen recorder, Whisper transcription, live assist HUD and AI meeting notes for macOS",
+  "homepage": "https://localscribe-48f.pages.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nadimtuhin/localscribe.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nadimtuhin/localscribe/issues"
+  },
+  "license": "MIT",
+  "author": "Omar Faruque Tuhin (Nadim Tuhin) <nadimtuhin@gmail.com> (https://nadimtuhin.com)",
+  "keywords": [
+    "screen-recorder",
+    "screencapturekit",
+    "macos",
+    "whisper",
+    "transcription",
+    "meeting-notes",
+    "ai-notes",
+    "hermes"
+  ],
+  "os": [
+    "darwin"
+  ],
   "type": "module",
-  "bin": { "localscribe": "src/cli.ts" },
+  "bin": {
+    "localscribe": "src/cli.ts"
+  },
+  "files": [
+    "src",
+    "!src/**/*.test.ts",
+    "native",
+    "!native/LocalscribeBar/.build",
+    "!native/LocalscribeBar/Tests",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "start": "bun src/cli.ts start",
     "stop": "bun src/cli.ts stop",
@@ -12,5 +47,7 @@
     "coverage": "bun test --coverage",
     "e2e": "E2E=1 bun test ./e2e/localscribe.e2e.ts --timeout 180000"
   },
-  "devDependencies": { "@types/bun": "latest" }
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
 }
