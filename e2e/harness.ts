@@ -1,4 +1,4 @@
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -40,7 +40,9 @@ export class Sandbox {
     mkdirSync(this.home, { recursive: true });
     mkdirSync(this.outDir, { recursive: true });
     // mise shims read config from $HOME and refuse to run under a fake one, so drop them from PATH.
-    const path = (process.env.PATH ?? "").split(":").filter((dir) => !dir.includes("/mise/shims")).join(":");
+    // Ensure native Homebrew on Apple Silicon precedes /usr/local/bin so modern ffmpeg is preferred.
+    const rawDirs = (process.env.PATH ?? "").split(":").filter((dir) => !dir.includes("/mise/shims"));
+    const path = ["/opt/homebrew/bin", ...rawDirs.filter((d) => d !== "/opt/homebrew/bin")].join(":");
     this.env = { ...(process.env as Record<string, string>), HOME: this.home, PATH: path, ...env };
     // Models resolve from $HOME, so default model selection is exercised through a read-only link.
     mkdirSync(join(this.home, ".hermes/models"), { recursive: true });
@@ -51,6 +53,16 @@ export class Sandbox {
   readonly whisperLog = join(this.root, "whisper-args.log");
   // Model file names whisper-cli was invoked with, in order.
   whisperModels = () => this.read(this.whisperLog).split("\n").flatMap((line) => line.match(/-m (\S+)/)?.[1] ?? []).map((m) => m.split("/").pop());
+
+  notesFile = (prefix: string) => {
+    try {
+      const names = readdirSync(this.outDir);
+      const found = names.find((n) => n.startsWith(prefix) && n.endsWith(".notes.md"));
+      return found ? join(this.outDir, found) : join(this.outDir, `${prefix}.notes.md`);
+    } catch {
+      return join(this.outDir, `${prefix}.notes.md`);
+    }
+  };
 
   private shim(name: string, body: string) {
     const dir = join(this.root, "shim");

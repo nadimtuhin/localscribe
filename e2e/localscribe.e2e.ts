@@ -91,7 +91,7 @@ describe.skipIf(!E2E_ENABLED)("localscribe e2e", () => {
     s.exposeHermes();
     const stopped = await recordBangla(s, "bnn", ["--notes"]);
     expect(stopped.code).toBe(0);
-    const notes = s.read(s.base("bnn.notes.md"));
+    const notes = s.read(s.notesFile("bnn"));
     // Hermes (cloud) latency is outside this repo; a timeout says nothing about the Bangla path.
     if (stopped.stdout.includes("hermes timed out")) return console.warn("3b: inconclusive, hermes timed out");
     expect(notes,`stop output:\n${stopped.stdout}\n${stopped.stderr}`).not.toBe("");
@@ -109,7 +109,7 @@ describe.skipIf(!E2E_ENABLED)("localscribe e2e", () => {
     const stopped = await s.run(["stop"], 170_000);
     speech.kill();
     expect(stopped.code).toBe(0);
-    const notes = s.read(s.base("notes.notes.md"));
+    const notes = s.read(s.notesFile("notes"));
     expect(notes, `stop output:\n${stopped.stdout}\n${stopped.stderr}`).not.toBe("");
     expect(notes).toContain("Started:");
     for (const heading of ["## Summary", "## Key points", "## Decisions", "## Action items", "## Suggestions"]) expect(notes).toContain(heading);
@@ -176,4 +176,16 @@ describe.skipIf(!E2E_ENABLED)("localscribe e2e", () => {
     const recording = s.read(`${s.home}/.localscribe/state.json`) !== "";
     expect({ code: result.code, recording, leftovers: leftoverNames(s) }).toEqual({ code: 0, recording: false, leftovers: [] });
   }, 30_000);
+
+  t("8. --name slugifies filename and preserves it on stop", async () => {
+    const s = fresh();
+    const result = await s.run(["start", "--no-mic", "-d", "--no-system-audio", "--name", "Quick Catchup"]);
+    expect(result.code).toBe(0);
+    expect(result.stdout).toContain("_quick-catchup.mp4");
+    await Bun.sleep(2000);
+    const stopped = await s.run(["stop"]);
+    expect(stopped.code).toBe(0);
+    expect(stopped.stdout).toContain("_quick-catchup.mp4");
+    expect(leftoverNames(s)).toEqual([]);
+  }, 60_000);
 });
