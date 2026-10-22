@@ -2,3 +2,5 @@ node_modules
 bin/
 .omc/
 .claude/
+.test-*/
+coverage/
