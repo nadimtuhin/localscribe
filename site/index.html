@@ -217,8 +217,21 @@
       font-size: 15px;
       font-weight: 700;
       color: var(--ink);
+      font-family: 'Space Mono', monospace;
       overflow-x: auto;
       white-space: nowrap;
+    }
+
+    .install-command .prompt {
+      color: var(--orange);
+      font-weight: 700;
+      margin-right: 4px;
+      user-select: none;
+    }
+
+    .install-command .cmd {
+      color: var(--ink);
+      font-weight: 700;
     }
 
     .copy-btn {
@@ -327,14 +340,16 @@
       overflow-y: auto;
     }
 
-    .prompt { color: #58A6FF; }
-    .cmd { color: #F0F6FC; font-weight: 700; }
-    .dim { color: #8B949E; }
-    .green { color: #3FB950; font-weight: 700; }
-    .yellow { color: #D29922; font-weight: 700; }
-    .pink { color: #F778BA; }
-    .cyan { color: #79C0FF; }
-    .white { color: #FFFFFF; }
+    .dim { color: var(--muted); }
+
+    .term-body .prompt { color: #58A6FF; }
+    .term-body .cmd { color: #F0F6FC; font-weight: 700; }
+    .term-body .dim { color: #8B949E; }
+    .term-body .green { color: #3FB950; font-weight: 700; }
+    .term-body .yellow { color: #D29922; font-weight: 700; }
+    .term-body .pink { color: #F778BA; }
+    .term-body .cyan { color: #79C0FF; }
+    .term-body .white { color: #FFFFFF; }
 
     /* Key Spec Ticker */
     .ticker-band {
