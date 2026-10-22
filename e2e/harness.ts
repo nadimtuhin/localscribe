@@ -24,6 +24,7 @@ const pgrep = (args: string[]): number[] =>
 const helperPids = () => [
   ...HELPERS.flatMap((name) => pgrep(["-x", name]).map((pid) => ({ pid, name }))),
   ...pgrep(["-f", WORKER_PATTERN]).map((pid) => ({ pid, name: "live-worker" })),
+  ...pgrep(["-f", "cli.ts optimize-worker"]).map((pid) => ({ pid, name: "optimize-worker" })),
 ];
 
 export interface Run { code: number; stdout: string; stderr: string }

@@ -133,6 +133,11 @@ describe("optimize command", () => {
     expect(readQueue(queuePath).jobs[0]!.resolution).toBe("720p");
   });
 
+  test("rejects invalid resolution with OptimizeError", async () => {
+    const cmd = createOptimizeCommand(createDeps());
+    expect(cmd({ positionals: ["/movies/rec.mp4"], values: { resolution: "invalid-res" } })).rejects.toThrow();
+  });
+
   test("fails when no recordings found", async () => {
     const cmd = createOptimizeCommand(createDeps({ list: () => [], exists: () => false }));
     const code = await cmd({ positionals: [], values: {} });

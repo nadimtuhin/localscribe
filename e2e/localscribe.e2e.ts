@@ -188,4 +188,18 @@ describe.skipIf(!E2E_ENABLED)("localscribe e2e", () => {
     expect(stopped.stdout).toContain("_quick-catchup.mp4");
     expect(leftoverNames(s)).toEqual([]);
   }, 60_000);
+
+  t("9. optimize background worker processes queued video and clears queue", async () => {
+    const s = fresh();
+    const out = s.out("opt_test");
+    Bun.spawnSync(["ffmpeg", "-y", "-f", "lavfi", "-i", "testsrc=duration=2:size=1920x1080:rate=30", out]);
+    const res = await s.run(["optimize", out, "--resolution", "720p", "--wait"]);
+    expect(res.code).toBe(0);
+    expect(res.stdout).toContain("optimized");
+    const optPath = s.out("opt_test.opt");
+    expect(existsSync(optPath)).toBe(true);
+    const q = await s.run(["queue", "--json"]);
+    expect(JSON.parse(q.stdout).jobs[0].status).toBe("completed");
+    expect(leftoverNames(s)).toEqual([]);
+  }, 60_000);
 });
