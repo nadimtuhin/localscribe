@@ -679,6 +679,7 @@
           <button class="term-tab active" onclick="switchTab(0)">Start Record</button>
           <button class="term-tab" onclick="switchTab(1)">Live Assist TUI</button>
           <button class="term-tab" onclick="switchTab(2)">AI Notes Output</button>
+          <button class="term-tab" onclick="switchTab(3)">Optimize & Queue</button>
         </div>
 
         <div id="tab-0" class="term-body">
@@ -726,6 +727,17 @@
           <p class="cyan">- [ ] [00:25] Verify secondary replica automated promotion</p>
           <p class="cyan">- [ ] [12:40] Send migration checklist to stakeholder channel</p>
         </div>
+
+        <div id="tab-3" class="term-body" style="display:none;">
+          <p><span class="prompt">~ $</span> <span class="cmd">localscribe optimize --resolution 1080p</span></p>
+          <p class="cyan">enqueued 2026-10-21_14-30-00.mp4 (1080p) for optimization -> 2026-10-21_14-30-00.opt.mp4</p>
+          <p class="dim">queue job opt_1792672331_x8b9 (worker pid 45129)</p>
+          <br>
+          <p><span class="prompt">~ $</span> <span class="cmd">localscribe queue</span></p>
+          <p class="green">worker: active (pid 45129)</p>
+          <p class="yellow">jobs:</p>
+          <p class="white">  [completed] 2026-10-21_14-30-00.mp4 (1080p) -> 2026-10-21_14-30-00.opt.mp4 (453.0 MB -> 62.4 MB, 86% saved)</p>
+        </div>
       </div>
     </div>
   </section>
@@ -733,8 +745,8 @@
   <!-- Marquee Ticker -->
   <div class="ticker-band">
     <div class="ticker-content">
-      SCREENCAPTUREKIT ✦ ZERO VIRTUAL AUDIO DRIVERS ✦ LOSSLESS SYSTEM AUDIO ✦ LOCAL WHISPER TRANSCRIPTION ✦ HERMES AI MEETING NOTES ✦ BANGLA / MULTILINGUAL WHISPER ✦ LIVE TUI HUD ✦ SCREEN ANNOTATION ✦ NATIVE SWIFT MENU-BAR APP ✦
-      SCREENCAPTUREKIT ✦ ZERO VIRTUAL AUDIO DRIVERS ✦ LOSSLESS SYSTEM AUDIO ✦ LOCAL WHISPER TRANSCRIPTION ✦ HERMES AI MEETING NOTES ✦ BANGLA / MULTILINGUAL WHISPER ✦ LIVE TUI HUD ✦ SCREEN ANNOTATION ✦ NATIVE SWIFT MENU-BAR APP ✦
+      SCREENCAPTUREKIT ✦ ZERO VIRTUAL AUDIO DRIVERS ✦ LOSSLESS SYSTEM AUDIO ✦ LOCAL WHISPER TRANSCRIPTION ✦ HERMES AI MEETING NOTES ✦ BANGLA / MULTILINGUAL WHISPER ✦ LIVE TUI HUD ✦ SCREEN ANNOTATION ✦ NATIVE SWIFT MENU-BAR APP ✦ VIDEO OPTIMIZE BACKGROUND QUEUE ✦
+      SCREENCAPTUREKIT ✦ ZERO VIRTUAL AUDIO DRIVERS ✦ LOSSLESS SYSTEM AUDIO ✦ LOCAL WHISPER TRANSCRIPTION ✦ HERMES AI MEETING NOTES ✦ BANGLA / MULTILINGUAL WHISPER ✦ LIVE TUI HUD ✦ SCREEN ANNOTATION ✦ NATIVE SWIFT MENU-BAR APP ✦ VIDEO OPTIMIZE BACKGROUND QUEUE ✦
     </div>
   </div>
 
@@ -787,6 +799,13 @@
           <h3>Screen Annotation Overlay</h3>
           <p>Draw directly over the screen during presentations or reviews. Native transparent Metal-backed canvas spawns as a sidecar process.</p>
           <div class="card-footer">--draw · Cleans up on stop automatically</div>
+        </div>
+
+        <div class="card">
+          <div class="card-num">07</div>
+          <h3>Video Optimization & Queue</h3>
+          <p>Compress raw Retina recordings with H.264 & custom resolution presets (1080p, 720p, 4k). Asynchronous background worker queue keeps your terminal free.</p>
+          <div class="card-footer">localscribe optimize --resolution 1080p · localscribe queue</div>
         </div>
       </div>
     </div>
@@ -962,6 +981,16 @@
               <td>Regenerates structured AI meeting notes from an existing recording or transcript.</td>
             </tr>
             <tr>
+              <td><code>localscribe optimize</code></td>
+              <td><code>[target], --resolution &lt;res&gt;, --crf N, --wait</code></td>
+              <td>Compresses and scales video via background queue without blocking terminal. Target defaults to latest recording.</td>
+            </tr>
+            <tr>
+              <td><code>localscribe queue</code></td>
+              <td><code>--clear, --json</code></td>
+              <td>Inspects active worker status, enqueued jobs, compression savings, or clears finished jobs.</td>
+            </tr>
+            <tr>
               <td><code>localscribe devices</code></td>
               <td><code>--json</code></td>
               <td>Lists all connected displays, active macOS windows, and available microphones.</td>
@@ -1047,7 +1076,7 @@
       document.querySelectorAll('.term-tab').forEach((tab, i) => {
         tab.classList.toggle('active', i === index);
       });
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 4; i++) {
         const el = document.getElementById('tab-' + i);
         if (el) el.style.display = i === index ? 'block' : 'none';
       }

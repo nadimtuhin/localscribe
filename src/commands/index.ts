@@ -9,6 +9,9 @@ import { liveCommand } from "./live.ts";
 import { liveWorkerCommand } from "./live-worker.ts";
 import { notesCommand } from "./notes.ts";
 import { openCommand } from "./open.ts";
+import { optimizeCommand } from "./optimize.ts";
+import { optimizeWorkerCommand } from "./optimize-worker.ts";
+import { queueCommand } from "./queue.ts";
 import { cliOptions, HELP, type Command } from "./shared.ts";
 import { startCommand } from "./start.ts";
 import { statusCommand } from "./status.ts";
@@ -27,6 +30,9 @@ const commands: Record<string, Command> = {
   open: openCommand,
   copy: copyCommand,
   last: lastCommand,
+  optimize: optimizeCommand,
+  "optimize-worker": optimizeWorkerCommand,
+  queue: queueCommand,
 };
 
 // Merges multi-word or repeated language flags like `--lang en bn` into `--lang en,bn`.

@@ -4,6 +4,8 @@ import { basename, dirname, join } from "node:path";
 
 export const defaultRecordingsDir = (home = homedir()) => join(home, "Movies", "localscribe");
 export const stateFilePath = (home = homedir()) => join(home, ".localscribe", "state.json");
+export const optimizeQueuePath = (home = homedir()) => join(home, ".localscribe", "optimize-queue.json");
+export const optimizeLogPath = (home = homedir()) => join(home, ".localscribe", "optimize-worker.log");
 
 export function slugify(text: string): string {
   return text

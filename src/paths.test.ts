@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { homedir } from "node:os";
-import { defaultRecordingsDir, renameRecordingFiles, slugify, stateFilePath, timestampedFilename, uniqueBase } from "./paths.ts";
+import { defaultRecordingsDir, optimizeLogPath, optimizeQueuePath, renameRecordingFiles, slugify, stateFilePath, timestampedFilename, uniqueBase } from "./paths.ts";
 
 describe("default locations", () => {
   test("recordings go to Movies/localscribe under the given home", () => {
@@ -11,10 +11,17 @@ describe("default locations", () => {
     expect(stateFilePath("/Users/ada")).toBe("/Users/ada/.localscribe/state.json");
   });
 
+  test("the optimize queue and log files live in .localscribe under the given home", () => {
+    expect(optimizeQueuePath("/Users/ada")).toBe("/Users/ada/.localscribe/optimize-queue.json");
+    expect(optimizeLogPath("/Users/ada")).toBe("/Users/ada/.localscribe/optimize-worker.log");
+  });
+
   test("both default to the current user's home", () => {
     const home = homedir();
     expect(defaultRecordingsDir()).toBe(`${home}/Movies/localscribe`);
     expect(stateFilePath()).toBe(`${home}/.localscribe/state.json`);
+    expect(optimizeQueuePath()).toBe(`${home}/.localscribe/optimize-queue.json`);
+    expect(optimizeLogPath()).toBe(`${home}/.localscribe/optimize-worker.log`);
   });
 });
 

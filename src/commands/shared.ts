@@ -17,7 +17,9 @@ export const HELP = `localscribe - local screen recorder
   localscribe list
   localscribe devices     [--json]
   localscribe captions
-  localscribe notes <mp4|transcript.md> [--lang <language>] [--name <name>]`;
+  localscribe notes <mp4|transcript.md> [--lang <language>] [--name <name>]
+  localscribe optimize [target] [--resolution <res>] [--crf N] [--out file.mp4] [--wait] [--status] [--clear]
+  localscribe queue    [--clear] [--json]`;
 
 // One flag table for every command, so adding a flag never touches another command's file.
 export const cliOptions = {
@@ -44,6 +46,12 @@ export const cliOptions = {
   notify: { type: "boolean" },
   json: { type: "boolean" },
   help: { type: "boolean", short: "h" },
+  resolution: { type: "string" },
+  res: { type: "string" },
+  crf: { type: "string" },
+  wait: { type: "boolean", short: "w" },
+  status: { type: "boolean" },
+  clear: { type: "boolean" },
 } as const;
 
 export interface CliArgs {

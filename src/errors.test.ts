@@ -4,9 +4,10 @@ import { LiveOptionsError } from "./live/options.ts";
 import { RecorderError } from "./recorder.ts";
 import { WhisperModelError } from "./transcription/core.ts";
 import { LanguageError } from "./transcription/language.ts";
+import { OptimizeError } from "./optimize.ts";
 
 describe("user-facing errors", () => {
-  const errors = { SelectionError, LiveOptionsError, RecorderError, WhisperModelError, LanguageError };
+  const errors = { SelectionError, LiveOptionsError, RecorderError, WhisperModelError, LanguageError, OptimizeError };
 
   for (const [name, ErrorClass] of Object.entries(errors)) {
     test(`${name} is an Error that carries its message and its own name`, () => {

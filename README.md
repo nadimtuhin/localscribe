@@ -197,6 +197,8 @@ Usage:
   localscribe devices     [--json]
   localscribe captions
   localscribe notes <mp4|transcript.md> [--lang <language>] [--name <name>]
+  localscribe optimize [target] [--resolution <res>] [--crf N] [--out file.mp4] [--wait] [--status] [--clear]
+  localscribe queue    [--clear] [--json]
 ```
 
 | Command | Key Flags | Description |
@@ -210,6 +212,8 @@ Usage:
 | `localscribe live` | `--role, --context` | Re-attaches interactive terminal HUD to a detached recording session. |
 | `localscribe captions` | *(none)* | Live-streams transcribed lines with timestamps and speaker attribution to stdout. |
 | `localscribe notes` | `<path> [--lang] [--name]` | Regenerates structured AI meeting notes from an existing video or transcript. |
+| `localscribe optimize` | `[target] [--resolution <res>] [--wait]` | Compresses and resizes video via background queue without blocking terminal. |
+| `localscribe queue` | `[--clear] [--json]` | Inspects or clears the background video optimization queue. |
 | `localscribe devices` | `--json` | Inspects connected monitors, open macOS window IDs, and available microphones. |
 | `localscribe list` | *(none)* | Lists finished recordings in `~/Movies/localscribe` sorted newest first. |
 
