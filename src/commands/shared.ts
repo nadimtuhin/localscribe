@@ -4,15 +4,18 @@ export const HELP = `localscribe - local screen recorder
 
   localscribe start [--name <name>] [--out file.mp4] [--screen N] [--fps 30] [--mic N] [--no-mic] [--no-system-audio]
                    [--window <id|name>] [--area x,y,w,h] [--display N] [--engine sck|ffmpeg]
-                   [--transcribe] [--live] [--notes] [--draw] [-d|--detach]
+                   [--transcribe] [--live] [--notes] [--draw] [-d|--detach] [--notify]
                    [--lang <language>]   (conversation language: english, bangla, hindi, urdu, arabic, spanish, ... or multiple like "en bn", "en,bn"; default en; Bangla uses ggml-large-v3-turbo-q5_0.bin, other non-English ggml-small.bin)
                    [--role candidate|interviewer|meeting] [--context <file>]...   (with --live; type "?question" in the live view to ask Hermes)
                    (--live opens the live view here; quitting it stops the recording. -d runs in the background)
   localscribe live        (reattach the live view to a recording started with --live -d)
-  localscribe stop
-  localscribe status [--json]
+  localscribe stop        [--notify]
+  localscribe open        [target] [--notes] [--transcribe] [-R|--reveal]
+  localscribe copy        [target] [--transcribe]
+  localscribe last        [--json]
+  localscribe status      [--json]
   localscribe list
-  localscribe devices [--json]
+  localscribe devices     [--json]
   localscribe captions
   localscribe notes <mp4|transcript.md> [--lang <language>] [--name <name>]`;
 
@@ -37,6 +40,8 @@ export const cliOptions = {
   role: { type: "string" },
   lang: { type: "string" },
   context: { type: "string", multiple: true },
+  reveal: { type: "boolean", short: "R" },
+  notify: { type: "boolean" },
   json: { type: "boolean" },
   help: { type: "boolean", short: "h" },
 } as const;

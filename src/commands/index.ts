@@ -1,11 +1,14 @@
 import { parseArgs } from "node:util";
 import { isLanguageToken } from "../transcription/language.ts";
 import { captionsCommand } from "./captions.ts";
+import { copyCommand } from "./copy.ts";
 import { devicesCommand } from "./devices.ts";
+import { lastCommand } from "./last.ts";
 import { listCommand } from "./list.ts";
 import { liveCommand } from "./live.ts";
 import { liveWorkerCommand } from "./live-worker.ts";
 import { notesCommand } from "./notes.ts";
+import { openCommand } from "./open.ts";
 import { cliOptions, HELP, type Command } from "./shared.ts";
 import { startCommand } from "./start.ts";
 import { statusCommand } from "./status.ts";
@@ -21,6 +24,9 @@ const commands: Record<string, Command> = {
   notes: notesCommand,
   live: liveCommand,
   "live-worker": liveWorkerCommand,
+  open: openCommand,
+  copy: copyCommand,
+  last: lastCommand,
 };
 
 // Merges multi-word or repeated language flags like `--lang en bn` into `--lang en,bn`.

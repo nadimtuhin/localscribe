@@ -71,7 +71,7 @@ describe("runCli", () => {
   test("capture-source and engine flags parse and are documented in help", async () => {
     await runCli(["--help", "--window", "Safari", "--area", "0,0,800,600", "--display", "1", "--engine", "sck", "--json"]);
     const help = out.join("\n");
-    for (const flag of ["--window", "--area", "--display", "--engine", "devices"]) expect(help).toContain(flag);
+    for (const flag of ["--window", "--area", "--display", "--engine", "devices", "open", "copy", "last"]) expect(help).toContain(flag);
   });
 });
 

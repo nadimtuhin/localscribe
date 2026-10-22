@@ -923,8 +923,23 @@
             </tr>
             <tr>
               <td><code>localscribe stop</code></td>
-              <td><code>(none)</code></td>
-              <td>Stops the active recording session, runs stop hooks (Whisper transcription & Hermes notes).</td>
+              <td><code>--notify</code></td>
+              <td>Stops the active recording session, runs stop hooks (Whisper transcription & Hermes notes). Optional native banner.</td>
+            </tr>
+            <tr>
+              <td><code>localscribe open</code></td>
+              <td><code>[target], --notes, --transcribe, -R</code></td>
+              <td>Opens the recording, notes, or transcript in default macOS app (or reveals in Finder with <code>-R</code>).</td>
+            </tr>
+            <tr>
+              <td><code>localscribe copy</code></td>
+              <td><code>[target], --transcribe</code></td>
+              <td>Copies AI notes (or transcript with <code>--transcribe</code>) directly to macOS clipboard via <code>pbcopy</code>.</td>
+            </tr>
+            <tr>
+              <td><code>localscribe last</code></td>
+              <td><code>--json</code></td>
+              <td>Displays metadata, file paths, and AI summary for the latest recording session.</td>
             </tr>
             <tr>
               <td><code>localscribe status</code></td>

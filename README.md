@@ -184,22 +184,28 @@ localscribe - local screen recorder
 Usage:
   localscribe start [--name <name>] [--out file.mp4] [--screen N] [--fps 30] [--mic N] [--no-mic] [--no-system-audio]
                    [--window <id|name>] [--area x,y,w,h] [--display N] [--engine sck|ffmpeg]
-                   [--transcribe] [--live] [--notes] [--draw] [-d|--detach]
+                   [--transcribe] [--live] [--notes] [--draw] [-d|--detach] [--notify]
                    [--lang <language>]
                    [--role candidate|interviewer|meeting] [--context <file>]...
   localscribe live        (reattach the live view to a recording started with --live -d)
-  localscribe stop
-  localscribe status [--json]
+  localscribe stop        [--notify]
+  localscribe open        [target] [--notes] [--transcribe] [-R|--reveal]
+  localscribe copy        [target] [--transcribe]
+  localscribe last        [--json]
+  localscribe status      [--json]
   localscribe list
-  localscribe devices [--json]
+  localscribe devices     [--json]
   localscribe captions
   localscribe notes <mp4|transcript.md> [--lang <language>] [--name <name>]
 ```
 
 | Command | Key Flags | Description |
 | :--- | :--- | :--- |
-| `localscribe start` | `--name, --live, --notes, --transcribe, -d` | Starts screen + audio recording. Opens HUD or detaches to background with `-d`. |
-| `localscribe stop` | *(none)* | Cleanly stops recorder, mixes audio parts, runs Whisper & Hermes notes hooks. |
+| `localscribe start` | `--name, --live, --notes, --transcribe, -d, --notify` | Starts screen + audio recording. Opens HUD or detaches to background with `-d`. |
+| `localscribe stop` | `[--notify]` | Cleanly stops recorder, mixes audio parts, runs Whisper & Hermes notes hooks. Posts native banner with `--notify`. |
+| `localscribe open` | `[target] [--notes] [--transcribe] [-R]` | Opens recording, notes, or transcript in default macOS app (or reveals in Finder with `-R`). |
+| `localscribe copy` | `[target] [--transcribe]` | Copies AI meeting notes (or transcript with `--transcribe`) directly to macOS clipboard via `pbcopy`. |
+| `localscribe last` | `[--json]` | Shows metadata, paths, and AI summary snippet for the most recent recording session. |
 | `localscribe status` | `--json` | Checks active recording state, PID, file path, and elapsed duration. |
 | `localscribe live` | `--role, --context` | Re-attaches interactive terminal HUD to a detached recording session. |
 | `localscribe captions` | *(none)* | Live-streams transcribed lines with timestamps and speaker attribution to stdout. |
