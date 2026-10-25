@@ -38,7 +38,7 @@ export function createCopyCommand(
       deps.log("no recordings found");
       return 1;
     }
-    const base = target.replace(/\.(mp4|transcript\.md|notes\.md)$/, "");
+    const base = target.replace(/\.(mp4|m4a|transcript\.md|notes\.md)$/, "");
     const notesPath = `${base}.notes.md`;
     const txPath = `${base}.transcript.md`;
     const preferTx = values.transcribe === true;

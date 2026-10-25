@@ -69,6 +69,16 @@ describe("open command", () => {
     expect(log).toEqual(["opened /r/demo.transcript.md"]);
   });
 
+  test("opens .m4a notes when --notes is given", async () => {
+    const code = await createOpenCommand(createDeps({
+      list: () => [files("/r/audio.m4a")],
+      exists: (p) => p.endsWith(".notes.md") || p.endsWith(".m4a"),
+    }))({ positionals: ["/r/audio.m4a"], values: { notes: true } });
+    expect(code).toBe(0);
+    expect(ranCommands).toEqual([["open", "/r/audio.notes.md"]]);
+    expect(log).toEqual(["opened /r/audio.notes.md"]);
+  });
+
   test("--transcribe falls back to target if transcript file does not exist", async () => {
     const code = await createOpenCommand(createDeps({
       exists: (p) => p.endsWith(".mp4"),

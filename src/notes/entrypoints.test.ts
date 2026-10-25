@@ -58,7 +58,7 @@ describe("notes command", () => {
   const run = (arg: string[], hermes: HermesRun, lines: string[]) =>
     createNotesCommand(hermes, (line) => lines.push(line))({ positionals: arg, values: {} as never });
 
-  test.each([[".mp4"], [".transcript.md"], [""]])("accepts a path ending %p", async (suffix) => {
+  test.each([[".mp4"], [".m4a"], [".transcript.md"], [""]])("accepts a path ending %p", async (suffix) => {
     const lines: string[] = [];
     expect(await run([`${base}${suffix}`], ok, lines)).toBe(0);
     expect(readFileSync(`${base}.notes.md`, "utf8")).toContain(reply);

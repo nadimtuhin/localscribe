@@ -91,6 +91,17 @@ export function buildSckMuxArgs({ video, audio, out }: SckMuxOptions): string[] 
   ];
 }
 
+export function buildAudioMixArgs({ inputs, out }: { inputs: string[]; out: string }): string[] {
+  return [
+    "-hide_banner", "-loglevel", "error", "-y",
+    ...inputs.flatMap((p) => ["-i", p]),
+    "-filter_complex", "[0:a][1:a]amix=inputs=2:duration=longest:normalize=0[mixed]",
+    "-map", "[mixed]",
+    "-c:a", "aac", "-b:a", "192k",
+    out,
+  ];
+}
+
 const TOOL_DIRS = ["/opt/homebrew/bin", "/usr/local/bin"];
 
 // A GUI launched from Finder gets a minimal PATH without Homebrew, so ffmpeg would not be found.

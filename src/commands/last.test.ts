@@ -88,6 +88,16 @@ describe("last command", () => {
     expect(readText("package.json")).toContain("localscribe");
   });
 
+  test("resolves notes and transcript for .m4a recording", async () => {
+    const code = await createLastCommand(createDeps({
+      list: () => [files("/r/audio.m4a")],
+    }))({ positionals: [], values: {} });
+    expect(code).toBe(0);
+    expect(log).toContain("video: /r/audio.m4a");
+    expect(log).toContain("notes: /r/audio.notes.md");
+    expect(log).toContain("transcript: /r/audio.transcript.md");
+  });
+
   test("default lastCommand uses real dependencies", () => {
     expect(typeof lastCommand).toBe("function");
   });

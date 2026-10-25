@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
-import { buildArgs, buildMicArgs, buildMuxArgs, buildSckMuxArgs, parseMicrophones, parseScreens } from "./ffmpeg.ts";
+import { buildArgs, buildAudioMixArgs, buildMicArgs, buildMuxArgs, buildSckMuxArgs, parseMicrophones, parseScreens } from "./ffmpeg.ts";
 import { captureArgs, type Selection } from "./capture/selection.ts";
-import { defaultRecordingsDir, stateFilePath, timestampedFilename, withMp4Extension } from "./paths.ts";
+import { defaultRecordingsDir, stateFilePath, timestampedFilename, withAudioExtension, withMp4Extension } from "./paths.ts";
 import { clearState, readState, writeState, type RecordingState, type Sidecar } from "./state.ts";
 import { plugins as defaultPlugins, runStartHooks, runStopHooks } from "./plugins/index.ts";
 import type { PluginOptions, RecorderPlugin } from "./plugins/types.ts";
@@ -39,8 +39,8 @@ const withDefaults = (deps: Partial<RecorderDeps>): RecorderDeps => ({
 export function activeRecording(statePath = stateFilePath(), runner: ProcessRunner = realRunner): RecordingState | null {
   const state = readState(statePath);
   if (state && !runner.isRunning(state.pid, state.exe ?? "ffmpeg")) {
-    if (state.mic && runner.isRunning(state.mic.pid, "ffmpeg")) runner.kill(state.mic.pid, "SIGINT");
-    if (state.systemAudio && runner.isRunning(state.systemAudio.pid, "sysaudio")) runner.kill(state.systemAudio.pid, "SIGINT");
+    if (state.mic && state.mic.pid !== state.pid && runner.isRunning(state.mic.pid, "ffmpeg")) runner.kill(state.mic.pid, "SIGINT");
+    if (state.systemAudio && state.systemAudio.pid !== state.pid && runner.isRunning(state.systemAudio.pid, "sysaudio")) runner.kill(state.systemAudio.pid, "SIGINT");
     for (const { pid, exe } of state.sidecars ?? []) if (runner.isRunning(pid, exe)) runner.kill(pid, "SIGINT");
     clearState(statePath);
     return null;
@@ -75,6 +75,7 @@ const readLog = async (logFile: string) => (await Bun.file(logFile).text()).trim
 export interface StartOptions {
   out?: string;
   name?: string;
+  audioOnly?: boolean;
   screen?: number;
   fps?: number;
   mic?: number | false; // device index, or false to skip
@@ -97,9 +98,11 @@ export async function start(opts: StartOptions = {}, injected: Partial<RecorderD
   if (engine === "ffmpeg" && opts.selection) throw new RecorderError("--window, --area and --display need --engine sck");
 
   const { screens, microphones } = listDevices(runner);
-  const screenIndex = opts.screen ?? 0;
-  const screen = screens[screenIndex];
-  if (engine === "ffmpeg" && !screen) throw new RecorderError(`screen ${screenIndex} not found (found ${screens.length})`);
+  if (!opts.audioOnly) {
+    const screenIndex = opts.screen ?? 0;
+    const screen = screens[screenIndex];
+    if (engine === "ffmpeg" && !screen) throw new RecorderError(`screen ${screenIndex} not found (found ${screens.length})`);
+  }
 
   let micDevice: number | undefined;
   if (opts.mic !== false) {
@@ -109,13 +112,15 @@ export async function start(opts: StartOptions = {}, injected: Partial<RecorderD
     micDevice = mic.device;
   }
 
-  const file = withMp4Extension(resolve(opts.out ?? join(defaultRecordingsDir(), timestampedFilename(new Date(), opts.name))));
+  const file = opts.audioOnly
+    ? (opts.out ? withAudioExtension(resolve(opts.out)) : join(defaultRecordingsDir(), timestampedFilename(new Date(), opts.name, "m4a")))
+    : withMp4Extension(resolve(opts.out ?? join(defaultRecordingsDir(), timestampedFilename(new Date(), opts.name))));
   const recordsSystemAudio = opts.systemAudio !== false;
-  const partsBase = file.replace(/\.mp4$/, "");
-  const videoFile = recordsSystemAudio || engine === "sck" ? `${partsBase}.video.mp4` : file;
+  const partsBase = file.replace(/\.(mp4|m4a)$/, "");
+  const videoFile = opts.audioOnly ? file : (recordsSystemAudio || engine === "sck" ? `${partsBase}.video.mp4` : file);
   const audioFile = `${partsBase}.system.m4a`;
   const micFile = `${partsBase}.mic.m4a`;
-  const taken = [file, videoFile, audioFile, micFile].find((path) => existsSync(path));
+  const taken = [file, ...(opts.audioOnly ? [] : [videoFile]), audioFile, micFile].find((path) => existsSync(path));
   if (taken) throw new RecorderError(`refusing to overwrite existing file: ${taken}`);
   mkdirSync(dirname(file), { recursive: true });
 
@@ -128,8 +133,25 @@ export async function start(opts: StartOptions = {}, injected: Partial<RecorderD
 
   // Every spawned process, so the startup check and cleanup treat both engines alike.
   const processes: { pid: number; label: string; log: string }[] = [];
-  let engineState: Pick<RecordingState, "pid" | "exe" | "engine" | "selection" | "videoHasMic" | "systemAudio" | "systemAudioFile" | "mic">;
-  if (engine === "sck") {
+  let engineState: Pick<RecordingState, "pid" | "exe" | "engine" | "selection" | "videoHasMic" | "audioOnly" | "systemAudio" | "systemAudioFile" | "mic">;
+  if (opts.audioOnly) {
+    const recordsMic = opts.mic !== false && micDevice !== undefined;
+    const mic = recordsMic ? { pid: runner.spawnDetached(["ffmpeg", ...buildMicArgs({ micDevice: micDevice!, file: micFile })], ffmpegLog), file: micFile } : undefined;
+    if (mic) processes.push({ pid: mic.pid, label: "ffmpeg", log: ffmpegLog });
+    const helper = recordsSystemAudio ? ensureHelper(runner, SYSAUDIO) : undefined;
+    const sysAudio = helper ? { pid: runner.spawnDetached([helper, audioFile], helperLog), file: audioFile } : undefined;
+    if (sysAudio) processes.push({ pid: sysAudio.pid, label: "sysaudio", log: helperLog });
+    const primary = mic ?? sysAudio;
+    if (!primary) throw new RecorderError("cannot record audio-only with both --no-mic and --no-system-audio");
+    engineState = {
+      pid: primary.pid,
+      exe: mic ? "ffmpeg" : "sysaudio",
+      audioOnly: true,
+      videoHasMic: micDevice !== undefined,
+      mic,
+      systemAudio: sysAudio,
+    };
+  } else if (engine === "sck") {
     const capture = ensureHelper(runner, CAPTURE);
     const captureArguments = captureArgs(opts.selection, { out: videoFile, systemAudio: recordsSystemAudio ? audioFile : undefined, fps });
     // Helper first: its clock anchor is taken after process start, the mic's after ffmpeg init.
@@ -139,6 +161,8 @@ export async function start(opts: StartOptions = {}, injected: Partial<RecorderD
     if (mic) processes.push({ pid: mic.pid, label: "ffmpeg", log: ffmpegLog });
     engineState = { pid, exe: basename(capture), engine, selection: opts.selection, videoHasMic: false, systemAudioFile: recordsSystemAudio ? audioFile : undefined, mic };
   } else {
+    const screenIndex = opts.screen ?? 0;
+    const screen = screens[screenIndex];
     const helper = recordsSystemAudio ? ensureHelper(runner, SYSAUDIO) : undefined;
     // Start both back to back so their clocks line up as closely as possible.
     const pid = runner.spawnDetached(["ffmpeg", ...buildArgs({ screenDevice: screen!.device, micDevice, fps, file: videoFile })], ffmpegLog);
@@ -236,9 +260,9 @@ export async function stop(injected: Partial<RecorderDeps> = {}): Promise<StopRe
   if (!state) throw new RecorderError("not recording");
 
   const [video, audio, mic] = await Promise.all([
-    interrupt(runner, state.pid),
-    state.systemAudio ? interrupt(runner, state.systemAudio.pid) : { forced: false },
-    state.mic ? interrupt(runner, state.mic.pid) : { forced: false },
+    interrupt(runner, state.pid, state.exe),
+    state.systemAudio && state.systemAudio.pid !== state.pid ? interrupt(runner, state.systemAudio.pid) : { forced: false },
+    state.mic && state.mic.pid !== state.pid ? interrupt(runner, state.mic.pid) : { forced: false },
     interruptSidecars(runner, state.sidecars ?? []),
   ]);
   clearState(statePath);
@@ -247,7 +271,26 @@ export async function stop(injected: Partial<RecorderDeps> = {}): Promise<StopRe
 
   let keptParts: string[] = [];
   let mixError: string | undefined;
-  if (state.engine === "sck") {
+  if (state.audioOnly) {
+    const audioParts = [state.systemAudio?.file, state.mic?.file].filter((p): p is string => p !== undefined);
+    const recordedAudio = audioParts.filter(hasContent);
+    if (recordedAudio.length === 2) {
+      const mix = runner.run(["ffmpeg", ...buildAudioMixArgs({ inputs: recordedAudio, out: state.file })]);
+      if (mix.exitCode === 0) {
+        for (const p of audioParts) rmSync(p, { force: true });
+      } else {
+        keptParts = recordedAudio;
+        mixError = mix.stderr.trim();
+      }
+    } else if (recordedAudio.length === 1) {
+      renameSync(recordedAudio[0]!, state.file);
+      for (const p of audioParts) {
+        if (p !== recordedAudio[0]) rmSync(p, { force: true });
+      }
+    } else {
+      mixError = "no audio recorded";
+    }
+  } else if (state.engine === "sck") {
     ({ keptParts, mixError } = mixSckParts(runner, state));
   } else if (state.systemAudio) {
     // The helper writes nothing if no system sound played; then the video part is already final.
@@ -274,7 +317,7 @@ export async function stop(injected: Partial<RecorderDeps> = {}): Promise<StopRe
   let finalFile = state.file;
   if (!mixError && existsSync(state.file)) {
     const outcome = await runStopHooks(plugins, {
-      base: state.file.replace(/\.mp4$/, ""),
+      base: state.file.replace(/\.(mp4|m4a)$/, ""),
       options: state.pluginOptions ?? {},
       file: state.file,
       startedAt: state.startedAt,
@@ -298,7 +341,7 @@ export function list(dir = defaultRecordingsDir()): RecordingFile[] {
     return [];
   }
   return names
-    .filter((name) => name.endsWith(".mp4") && !name.endsWith(".video.mp4"))
+    .filter((name) => (name.endsWith(".mp4") || name.endsWith(".m4a")) && !name.endsWith(".video.mp4") && !name.endsWith(".system.m4a") && !name.endsWith(".mic.m4a"))
     .map((name) => {
       const path = join(dir, name);
       const info = statSync(path);

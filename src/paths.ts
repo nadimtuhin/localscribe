@@ -17,17 +17,26 @@ export function slugify(text: string): string {
 }
 
 // 2026-10-14T19:30:05 -> "2026-10-14_19-30-05.mp4" (local time)
-export function timestampedFilename(date: Date, name?: string): string {
+export function timestampedFilename(date: Date, name?: string, ext: "mp4" | "m4a" = "mp4"): string {
   const pad = (n: number) => String(n).padStart(2, "0");
   const day = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
   const time = `${pad(date.getHours())}-${pad(date.getMinutes())}-${pad(date.getSeconds())}`;
   const slug = name ? slugify(name) : "";
-  return slug ? `${day}_${time}_${slug}.mp4` : `${day}_${time}.mp4`;
+  return slug ? `${day}_${time}_${slug}.${ext}` : `${day}_${time}.${ext}`;
 }
 
 // Output is always mp4, so "demo" or "demo.mov" become "demo.mp4".
 export function withMp4Extension(path: string): string {
   return path.replace(/\.[^./]+$/, "") + ".mp4";
+}
+
+export function withAudioExtension(path: string): string {
+  if (path.endsWith(".mp4") || path.endsWith(".m4a")) return path;
+  return path.replace(/\.[^./]+$/, "") + ".m4a";
+}
+
+export function withRecordingExtension(path: string, audioOnly = false): string {
+  return audioOnly ? withAudioExtension(path) : withMp4Extension(path);
 }
 
 export function uniqueBase(base: string, slug: string, isExplicit = false, exists: (path: string) => boolean = existsSync): string {
@@ -38,7 +47,7 @@ export function uniqueBase(base: string, slug: string, isExplicit = false, exist
   const target = `${name}_${slug}`;
   let candidate = target;
   let counter = 1;
-  while (exists(join(dir, `${candidate}.mp4`))) {
+  while (exists(join(dir, `${candidate}.mp4`)) || exists(join(dir, `${candidate}.m4a`))) {
     candidate = `${target}-${counter++}`;
   }
   return join(dir, candidate);
@@ -52,7 +61,7 @@ export function renameRecordingFiles(
 ): string[] {
   if (oldBase === newBase) return [];
   const renamed: string[] = [];
-  const extensions = [".mp4", ".transcript.md", ".notes.md", ".live.txt", ".manual.md"];
+  const extensions = [".mp4", ".m4a", ".transcript.md", ".notes.md", ".live.txt", ".manual.md"];
   for (const ext of extensions) {
     const oldPath = `${oldBase}${ext}`;
     const newPath = `${newBase}${ext}`;

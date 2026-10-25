@@ -53,7 +53,7 @@ describe("start command", () => {
     await run({ out: "/r/a.mp4", screen: "1", fps: "15", mic: "2" });
     expect(started).toEqual([
       {
-        out: "/r/a.mp4", screen: 1, fps: 15, mic: 2, systemAudio: true, selection: undefined, engine: undefined,
+        out: "/r/a.mp4", screen: 1, fps: 15, mic: 2, audioOnly: false, systemAudio: true, selection: undefined, engine: undefined,
         plugins: { transcribe: false, liveCaptions: false, notes: false, systemAudio: true, draw: false, lang: "en" },
       },
     ]);
@@ -95,6 +95,38 @@ describe("start command", () => {
     const { helperFiles, run } = setup();
     await run({});
     expect(helperFiles).toEqual([]);
+  });
+
+  test("--audio-only flag passes audioOnly: true to the recorder", async () => {
+    const { started, run } = setup();
+    await run({ "audio-only": true });
+    expect(started[0]!.audioOnly).toBe(true);
+  });
+
+  test("--audio-only rejects conflicting video flags", async () => {
+    const videoFlags = [
+      { window: "Safari" },
+      { area: "0,0,100,100" },
+      { display: "1" },
+      { screen: "0" },
+      { fps: "30" },
+      { draw: true },
+      { engine: "sck" },
+    ] as const;
+
+    for (const flags of videoFlags) {
+      const { run } = setup();
+      await expect(run({ "audio-only": true, ...flags })).rejects.toThrow(
+        "--audio-only cannot be used with video options (--window, --area, --display, --screen, --fps, --draw, --engine)",
+      );
+    }
+  });
+
+  test("--audio-only rejects when both mic and system audio are disabled", async () => {
+    const { run } = setup();
+    await expect(run({ "audio-only": true, "no-mic": true, "no-system-audio": true })).rejects.toThrow(
+      "cannot record audio-only with both --no-mic and --no-system-audio",
+    );
   });
 });
 

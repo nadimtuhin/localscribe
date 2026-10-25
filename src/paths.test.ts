@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { homedir } from "node:os";
-import { defaultRecordingsDir, optimizeLogPath, optimizeQueuePath, renameRecordingFiles, slugify, stateFilePath, timestampedFilename, uniqueBase } from "./paths.ts";
+import { defaultRecordingsDir, optimizeLogPath, optimizeQueuePath, renameRecordingFiles, slugify, stateFilePath, timestampedFilename, uniqueBase, withAudioExtension, withRecordingExtension } from "./paths.ts";
 
 describe("default locations", () => {
   test("recordings go to Movies/localscribe under the given home", () => {
@@ -44,8 +44,37 @@ describe("timestampedFilename with name", () => {
     expect(timestampedFilename(new Date(2026, 0, 5, 7, 3, 9), "Team Sync")).toBe("2026-01-05_07-03-09_team-sync.mp4");
   });
 
+  test("supports m4a extension", () => {
+    expect(timestampedFilename(new Date(2026, 0, 5, 7, 3, 9), "Voice Memo", "m4a")).toBe("2026-01-05_07-03-09_voice-memo.m4a");
+    expect(timestampedFilename(new Date(2026, 0, 5, 7, 3, 9), undefined, "m4a")).toBe("2026-01-05_07-03-09.m4a");
+  });
+
   test("omits slug when name is empty or only punctuation", () => {
     expect(timestampedFilename(new Date(2026, 0, 5, 7, 3, 9), "   ")).toBe("2026-01-05_07-03-09.mp4");
+  });
+});
+
+describe("withAudioExtension", () => {
+  test("preserves .m4a", () => {
+    expect(withAudioExtension("/r/audio.m4a")).toBe("/r/audio.m4a");
+  });
+  test("preserves .mp4", () => {
+    expect(withAudioExtension("/r/video.mp4")).toBe("/r/video.mp4");
+  });
+  test("defaults extensionless paths to .m4a", () => {
+    expect(withAudioExtension("/r/audio")).toBe("/r/audio.m4a");
+  });
+  test("replaces other extension with .m4a", () => {
+    expect(withAudioExtension("/r/audio.wav")).toBe("/r/audio.m4a");
+  });
+});
+
+describe("withRecordingExtension", () => {
+  test("defaults to .mp4 for video and .m4a for audio-only", () => {
+    expect(withRecordingExtension("/r/demo", false)).toBe("/r/demo.mp4");
+    expect(withRecordingExtension("/r/demo", true)).toBe("/r/demo.m4a");
+    expect(withRecordingExtension("/r/demo.mp4", true)).toBe("/r/demo.mp4");
+    expect(withRecordingExtension("/r/demo.m4a", true)).toBe("/r/demo.m4a");
   });
 });
 
@@ -74,8 +103,8 @@ describe("renameRecordingFiles", () => {
     expect(renameRecordingFiles("/r/same", "/r/same")).toEqual([]);
   });
 
-  test("renames existing recording files to newBase", () => {
-    const existing = new Set(["/r/old.mp4", "/r/old.transcript.md", "/r/old.notes.md"]);
+  test("renames existing recording files to newBase including .m4a", () => {
+    const existing = new Set(["/r/old.m4a", "/r/old.transcript.md", "/r/old.notes.md"]);
     const renamed: [string, string][] = [];
     const result = renameRecordingFiles(
       "/r/old",
@@ -83,9 +112,9 @@ describe("renameRecordingFiles", () => {
       (path) => existing.has(path),
       (from, to) => renamed.push([from, to]),
     );
-    expect(result).toEqual(["/r/new.mp4", "/r/new.transcript.md", "/r/new.notes.md"]);
+    expect(result).toEqual(["/r/new.m4a", "/r/new.transcript.md", "/r/new.notes.md"]);
     expect(renamed).toEqual([
-      ["/r/old.mp4", "/r/new.mp4"],
+      ["/r/old.m4a", "/r/new.m4a"],
       ["/r/old.transcript.md", "/r/new.transcript.md"],
       ["/r/old.notes.md", "/r/new.notes.md"],
     ]);

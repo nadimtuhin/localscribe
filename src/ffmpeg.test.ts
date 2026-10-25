@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { buildMicArgs, buildSckMuxArgs, ensureToolPath, withToolPaths } from "./ffmpeg.ts";
+import { buildAudioMixArgs, buildMicArgs, buildSckMuxArgs, ensureToolPath, withToolPaths } from "./ffmpeg.ts";
 
 describe("buildMicArgs", () => {
   const args = buildMicArgs({ micDevice: 2, file: "/r/a.mic.m4a" });
@@ -27,6 +27,16 @@ describe("buildSckMuxArgs", () => {
   });
   test("keeps the whole video", () => {
     expect(buildSckMuxArgs({ video: "v.mp4", audio: ["s.m4a", "m.m4a"], out: "o.mp4" })).not.toContain("-shortest");
+  });
+});
+
+describe("buildAudioMixArgs", () => {
+  test("combines two audio inputs into output without video", () => {
+    const args = buildAudioMixArgs({ inputs: ["/r/s.m4a", "/r/m.m4a"], out: "/r/out.m4a" });
+    expect(args.join(" ")).toContain("-i /r/s.m4a -i /r/m.m4a");
+    expect(args.join(" ")).toContain("[0:a][1:a]amix=inputs=2:duration=longest:normalize=0[mixed]");
+    expect(args).toEqual(expect.arrayContaining(["-map", "[mixed]", "-c:a", "aac", "-b:a", "192k"]));
+    expect(args.at(-1)).toBe("/r/out.m4a");
   });
 });
 

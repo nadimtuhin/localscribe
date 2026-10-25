@@ -3,7 +3,7 @@ import { parseLanguage } from "../transcription/language.ts";
 import { generateAndReport, realHermesRun, type HermesRun } from "../notes/generate.ts";
 import type { Command } from "./shared.ts";
 
-const baseOf = (path: string) => path.replace(/\.(mp4|transcript\.md|notes\.md)$/, "");
+const baseOf = (path: string) => path.replace(/\.(mp4|m4a|transcript\.md|notes\.md)$/, "");
 
 export const createNotesCommand = (run: HermesRun, log: (line: string) => void): Command => async ({ positionals, values }) => {
   const path = positionals[0];

@@ -14,6 +14,7 @@ export interface RecordingState {
   file: string; // final output path
   videoFile: string; // video part; equals `file` when there is nothing to mix
   videoHasMic: boolean;
+  audioOnly?: boolean;
   systemAudio?: { pid: number; file: string }; // ffmpeg engine: separate sysaudio process
   systemAudioFile?: string; // sck engine: written by the capture helper itself
   mic?: { pid: number; file: string }; // sck engine: audio-only ffmpeg

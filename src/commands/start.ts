@@ -60,6 +60,22 @@ export function createStartCommand(deps: StartDeps = realDeps): Command {
   return async (args) => {
     const { values } = args;
     deps.ensureToolPath();
+    if (values["audio-only"] === true) {
+      if (values["no-mic"] && values["no-system-audio"]) {
+        throw new RecorderError("cannot record audio-only with both --no-mic and --no-system-audio");
+      }
+      if (
+        values.window !== undefined ||
+        values.area !== undefined ||
+        values.display !== undefined ||
+        values.screen !== undefined ||
+        values.fps !== undefined ||
+        values.draw === true ||
+        values.engine !== undefined
+      ) {
+        throw new RecorderError("--audio-only cannot be used with video options (--window, --area, --display, --screen, --fps, --draw, --engine)");
+      }
+    }
     const engine = parseEngine(values.engine);
     const plugins = pluginOptionsFromFlags(values);
     requireModelForStart(plugins, deps.env);
@@ -68,6 +84,7 @@ export function createStartCommand(deps: StartDeps = realDeps): Command {
     const state = await deps.start({
       out: values.out,
       ...(values.name !== undefined ? { name: values.name } : {}),
+      audioOnly: values["audio-only"] === true,
       screen: optionalNumber(values.screen),
       fps: optionalNumber(values.fps),
       mic: values["no-mic"] ? false : optionalNumber(values.mic),

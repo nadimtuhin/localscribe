@@ -35,6 +35,18 @@ describe("copy command", () => {
     expect(log).toEqual(["copied to clipboard: /custom/rec.notes.md"]);
   });
 
+  test("copies notes for a positional .m4a target", async () => {
+    const read = (p: string) => p.endsWith(".notes.md") ? "audio notes" : "tx content";
+    const copied: string[] = [];
+    const code = await createCopyCommand(
+      { list: () => [], exists: (p) => p.endsWith(".notes.md"), read, log: (t) => void log.push(t) },
+      (text) => { copied.push(text); return true; },
+    )({ positionals: ["/custom/voice.m4a"], values: {} });
+    expect(code).toBe(0);
+    expect(copied).toEqual(["audio notes"]);
+    expect(log).toEqual(["copied to clipboard: /custom/voice.notes.md"]);
+  });
+
   test("--transcribe prefers the transcript file when present", async () => {
     const list = [files("/r/demo.mp4")];
     const read = (p: string) => p.endsWith(".transcript.md") ? "tx content" : "notes content";

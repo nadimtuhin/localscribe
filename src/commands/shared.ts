@@ -2,7 +2,7 @@ import type { parseArgs } from "node:util";
 
 export const HELP = `localscribe - local screen recorder
 
-  localscribe start [--name <name>] [--out file.mp4] [--screen N] [--fps 30] [--mic N] [--no-mic] [--no-system-audio]
+  localscribe start [--name <name>] [--out file.mp4] [--audio-only] [--screen N] [--fps 30] [--mic N] [--no-mic] [--no-system-audio]
                    [--window <id|name>] [--area x,y,w,h] [--display N] [--engine sck|ffmpeg]
                    [--transcribe] [--live] [--notes] [--draw] [-d|--detach] [--notify]
                    [--lang <language>]   (conversation language: english, bangla, hindi, urdu, arabic, spanish, ... or multiple like "en bn", "en,bn"; default en; Bangla uses ggml-large-v3-turbo-q5_0.bin, other non-English ggml-small.bin)
@@ -25,6 +25,7 @@ export const HELP = `localscribe - local screen recorder
 export const cliOptions = {
   name: { type: "string" },
   out: { type: "string" },
+  "audio-only": { type: "boolean" },
   screen: { type: "string" },
   fps: { type: "string" },
   mic: { type: "string" },

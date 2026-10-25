@@ -30,7 +30,7 @@ export function createLastCommand(deps: LastDeps = realDeps): Command {
       deps.log("no recordings yet");
       return 1;
     }
-    const base = newest.path.replace(/\.mp4$/, "");
+    const base = newest.path.replace(/\.(mp4|m4a)$/, "");
     const notesPath = `${base}.notes.md`;
     const txPath = `${base}.transcript.md`;
     const hasNotes = deps.exists(notesPath);

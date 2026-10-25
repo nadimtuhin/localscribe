@@ -20,7 +20,7 @@ export function createOpenCommand(deps: OpenDeps = realDeps): Command {
       deps.log("no recordings found");
       return 1;
     }
-    const base = target.replace(/\.mp4$/, "");
+    const base = target.replace(/\.(mp4|m4a)$/, "");
     let fileToOpen = target;
     if (values.notes) {
       const notesPath = `${base}.notes.md`;
