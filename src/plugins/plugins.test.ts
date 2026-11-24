@@ -66,6 +66,13 @@ describe("runStopHooks", () => {
     expect(calls).toEqual(["ok:stop:undefined"]);
   });
 
+  test("strips .m4a from base so audio-only sidecars land next to the recording", async () => {
+    const bases: string[] = [];
+    const probe: RecorderPlugin = { name: "probe", enabled: () => true, stop: async (ctx) => void bases.push(ctx.base) };
+    await runStopHooks([probe], { ...baseContext(), file: "/r/demo.m4a", startedAt: "2026-10-14T10:00:00.000Z", durationMs: 1000, pluginStates: {} });
+    expect(bases).toEqual(["/r/demo"]);
+  });
+
   test("updates file when a stop hook returns an updated file", async () => {
     const renamer: RecorderPlugin = {
       name: "renamer",

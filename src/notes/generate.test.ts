@@ -38,6 +38,22 @@ describe("generateNotes", () => {
     expect(existsSync(`${expectedBase}.notes.md`)).toBe(true);
   });
 
+  test("keeps the .m4a extension for an audio-only recording", async () => {
+    withTranscript();
+    writeFileSync(`${base}.m4a`, "audio");
+    const audioMeta = { ...meta(dir), file: `${base}.m4a` };
+    const renamed = await generateNotes(base, { ...audioMeta, name: "Standup" }, ok());
+    expect(renamed.file).toBe(`${base}_standup.m4a`);
+    expect(existsSync(renamed.file!)).toBe(true);
+  });
+
+  test("returns the .m4a file when an audio-only recording is not renamed", async () => {
+    withTranscript();
+    writeFileSync(`${base}.m4a`, "audio");
+    const result = await generateNotes(base, { ...meta(dir), file: `${base}.m4a`, name: "???" }, ok());
+    expect(result.file).toBe(`${base}.m4a`);
+  });
+
   test("renames files when Hermes returns a title", async () => {
     withTranscript();
     writeFileSync(`${base}.mp4`, "video");

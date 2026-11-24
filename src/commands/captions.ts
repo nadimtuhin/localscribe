@@ -31,7 +31,7 @@ export function createCaptionsCommand(deps: CaptionsDeps = realDeps): Command {
       deps.printError("this recording has no live captions (start it with --live)");
       return 1;
     }
-    const liveFile = `${state.file.replace(/\.mp4$/, "")}.live.txt`;
+    const liveFile = `${state.file.replace(/\.(mp4|m4a)$/, "")}.live.txt`;
     let offset = 0;
     const drain = () => {
       if (!existsSync(liveFile)) return;
