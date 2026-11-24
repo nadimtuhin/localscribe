@@ -1,6 +1,6 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
-import { join } from "node:path";
+import { extname, join } from "node:path";
 import { renameRecordingFiles, slugify, uniqueBase } from "../paths.ts";
 import { lastClockMs } from "../live/prompt.ts";
 import { keepValidStamps } from "./stamps.ts";
@@ -62,11 +62,14 @@ export async function generateNotes(base: string, meta: NotesMeta, run: HermesRu
       }
     }
 
+    // Audio-only recordings are .m4a; the renamed recording keeps its own extension.
+    const ext = extname(meta.file) === ".m4a" ? ".m4a" : ".mp4";
+    const finalFile = `${finalBase}${ext}`;
     const finalNotesPath = `${finalBase}.notes.md`;
-    const finalMeta: NotesMeta = finalBase !== base ? { ...meta, file: `${finalBase}.mp4`, title } : { ...meta, title };
+    const finalMeta: NotesMeta = finalBase !== base ? { ...meta, file: finalFile, title } : { ...meta, title };
     const limitMs = meta.durationMs ?? lastClockMs(transcript);
     writeFileSync(finalNotesPath, formatNotesFile(finalMeta, keepValidStamps(result.stdout, limitMs)), { flag: "wx" });
-    return { written: true, message: `notes: wrote ${finalNotesPath}`, file: `${finalBase}.mp4` };
+    return { written: true, message: `notes: wrote ${finalNotesPath}`, file: finalFile };
   } catch (error) {
     return skipped(`notes: ${error instanceof Error ? error.message : String(error)}`);
   } finally {

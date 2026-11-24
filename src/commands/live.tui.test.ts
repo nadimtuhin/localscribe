@@ -76,6 +76,19 @@ describe("live view loop", () => {
     expect(screen).toContain("[00:02] them: general kenobi");
   });
 
+  test("reads <base>.live.txt for an audio-only (.m4a) recording", async () => {
+    writeFileSync(`${base()}.live.txt`, "[00:03] them: audio only\n");
+    const terminal = fakeTerminal();
+    const audio: RecordingState = { ...recording(), file: `${base()}.m4a`, videoFile: `${base()}.m4a`, audioOnly: true };
+    let reads = 0;
+    await createTui({
+      stdin: terminal.stdin, stdout: terminal.stdout, sleep: async () => {},
+      readActive: () => (reads++ < 1 ? audio : null), now: () => Date.parse(STARTED_AT),
+      run: async () => ({ exitCode: 0, stdout: "", stderr: "", timedOut: false }),
+    })(audio);
+    expect(lastFrame(terminal.log.written)).toContain("[00:03] them: audio only");
+  });
+
   test("shows the new captions of a file that has not been created yet once it appears", async () => {
     const { terminal, run } = harness({
       activeReads: 3,

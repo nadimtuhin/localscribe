@@ -61,7 +61,7 @@ export async function runStopHooks(registry: RecorderPlugin[], ctx: StopHooksCon
   for (const plugin of registry) {
     if (!plugin.enabled(ctx.options) || !plugin.stop) continue;
     try {
-      const result = await plugin.stop({ ...shared, file: currentFile, base: currentFile.replace(/\.mp4$/, ""), pluginState: pluginStates[plugin.name] });
+      const result = await plugin.stop({ ...shared, file: currentFile, base: currentFile.replace(/\.(mp4|m4a)$/, ""), pluginState: pluginStates[plugin.name] });
       if (typeof result === "object" && result !== null && "file" in result && typeof (result as { file: unknown }).file === "string") {
         currentFile = (result as { file: string }).file;
       }

@@ -39,7 +39,7 @@ const readIfExists = (path: string) => (existsSync(path) ? readFileSync(path, "u
 // Terminal IO only; every behaviour lives in createLiveSession and renderScreen.
 export function createTui(io: TuiIo): (recording: RecordingState) => Promise<void> {
   return async (recording) => {
-    const base = recording.file.replace(/\.mp4$/, "");
+    const base = recording.file.replace(/\.(mp4|m4a)$/, "");
     const context = loadContextFiles(recording.pluginOptions?.contextFiles ?? [], (path) => readFileSync(path, "utf8"));
     const session = createLiveSession({
       role: recording.pluginOptions?.role,

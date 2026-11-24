@@ -51,7 +51,10 @@ export function createCopyCommand(
       return 1;
     }
     const content = deps.read(chosen);
-    copyFn(content);
+    if (!copyFn(content)) {
+      deps.log(`could not copy to clipboard: ${chosen} (pbcopy failed)`);
+      return 1;
+    }
     deps.log(`copied to clipboard: ${chosen}`);
     return 0;
   };

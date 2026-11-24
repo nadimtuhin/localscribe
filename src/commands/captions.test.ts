@@ -64,4 +64,12 @@ describe("captions command", () => {
     expect(await command(args)).toBe(0);
     expect(out.join("")).toBe(" hello\n");
   });
+
+  test("tails <base>.live.txt for an audio-only (.m4a) recording", async () => {
+    writeFileSync(join(dir, "rec.live.txt"), " audio line\n");
+    const audio = { ...recording(true), file: join(dir, "rec.m4a"), videoFile: join(dir, "rec.m4a"), audioOnly: true };
+    const { command, out } = harness(audio, () => {});
+    expect(await command(args)).toBe(0);
+    expect(out.join("")).toBe(" audio line\n");
+  });
 });

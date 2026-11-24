@@ -69,6 +69,15 @@ describe("copy command", () => {
     expect(copied).toEqual(["tx content"]);
   });
 
+  test("reports failure when the clipboard copy fails", async () => {
+    const code = await createCopyCommand(
+      { list: () => [files("/r/demo.mp4")], exists: (p) => p.endsWith(".notes.md"), read: () => "notes", log: (t) => void log.push(t) },
+      () => false,
+    )({ positionals: [], values: {} });
+    expect(code).toBe(1);
+    expect(log).toEqual(["could not copy to clipboard: /r/demo.notes.md (pbcopy failed)"]);
+  });
+
   test("fails when neither notes nor transcript exist", async () => {
     const list = [files("/r/demo.mp4")];
     const code = await createCopyCommand(
@@ -106,7 +115,8 @@ describe("copy command", () => {
     writeFileSync(tmp, "hello real");
     try {
       const code = await copyCommand({ positionals: [tmp], values: {} });
-      expect(code).toBe(0);
+      // pbcopy is macOS-only; elsewhere the failed copy must be reported, not claimed.
+      expect(code).toBe(Bun.which("pbcopy") ? 0 : 1);
     } finally {
       try { unlinkSync(tmp); } catch {}
     }
